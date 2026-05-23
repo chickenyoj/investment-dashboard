@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Investment Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #0a0e1a; color: #e0e6f0; }
+    .header { padding: 18px; background: linear-gradient(135deg, #0d1b2a, #1a2a4a); border-bottom: 1px solid #1e3a5f; }
+    .header h1 { margin: 0; color: #4fc3f7; font-size: 1.3rem; }
+    .header p { margin: 4px 0 0; color: #7fa8c9; font-size: .85rem; }
+    .wrap { padding: 16px; max-width: 1200px; margin: auto; }
+    .grid { display: grid; grid-template-columns: 360px 1fr; gap: 16px; }
+    .card { background: #0d1b2a; border: 1px solid #1e3a5f; border-radius: 12px; padding: 14px; }
+    .card h2 { margin: 0 0 12px; color: #4fc3f7; font-size: 1rem; }
+    label { display: block; margin: 10px 0 4px; color: #7fa8c9; font-size: .75rem; }
+    input { width: 100%; padding: 9px; border-radius: 8px; border: 1px solid #1e3a5f; background: #0a0e1a; color: white; }
+    button { border: 0; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; margin-top: 10px; }
+    .btn-primary { background: #1565c0; color: white; }
+    .btn-green { background: #1b5e20; color: white; }
+    .btn-red { background: #7f1d1d; color: white; }
+    .btn-gray { background: #26364d; color: white; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th, td { padding: 9px; border-bottom: 1px solid #16263d; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: #4fc3f7; background: #0a0e1a; }
+    .pos { color: #4caf50; }
+    .neg { color: #ef5350; }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .summary-box { background: #0a0e1a; border-radius: 10px; padding: 12px; border: 1px solid #1e3a5f; }
+    .summary-box .label { color: #7fa8c9; font-size: .7rem; }
+    .summary-box .value { color: white; font-size: 1.1rem; font-weight: 800; margin-top: 4px; }
+    .ai-box { white-space: pre-wrap; background: #0a0e1a; border-radius: 10px; padding: 12px; min-height: 120px; color: #dbeafe; line-height: 1.5; margin-top: 12px; border: 1px solid #1e3a5f; }
+    .small { font-size: .72rem; color: #7fa8c9; margin-top: 8px; }
+    @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>💼 Investment Dashboard</h1>
+    <p>Add, edit, delete, and save your portfolio. Then ask ChatGPT to analyze it.</p>
+  </div>
+
+  <div class="wrap">
+    <div class="summary" id="summary"></div>
+
+    <div class="grid">
+      <div class="card">
+        <h2 id="formTitle">➕ Add Stock</h2>
+        <input type="hidden" id="editIndex" value="" />
+        <label>Ticker</label>
+        <input id="ticker" placeholder="Example: BDO" />
+        <label>Quantity</label>
+        <input id="qty" type="number" placeholder="Example: 46" />
+        <label>Average Buy Price</label>
+        <input id="avg" type="number" step="0.01" placeholder="Example: 102.23" />
+        <label>Latest Price / LTP</label>
+        <input id="ltp" type="number" step="0.01" placeholder="Example: 115.00" />
+        <div class="actions">
+          <button class="btn-green" onclick="saveStock()">💾 Save Stock</button>
+          <button class="btn-gray" onclick="clearForm()">Clear</button>
+        </div>
+        <div class="small">Your investments are saved in your browser using localStorage. No database needed for now.</div>
+      </div>
+
+      <div class="card">
+        <h2>📈 My Stocks</h2>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Ticker</th><th>Qty</th><th>Avg</th><th>LTP</th><th>Market Value</th><th>P/L</th><th>P/L %</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="stockRows"></tbody>
+          </table>
+        </div>
+        <div class="actions">
+          <button class="btn-primary" onclick="analyzePortfolio()">🤖 Analyze with ChatGPT</button>
+          <button class="btn-red" onclick="deleteAllStocks()">🗑️ Delete All</button>
+        </div>
+        <div class="ai-box" id="aiResult">AI analysis will appear here after deployment and OpenAI API setup.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const defaultStocks = [
+  { ticker: 'BDO', qty: 46, avg: 102.23, ltp: 115.00 },
+  { ticker: 'BPI', qty: 40, avg: 96.11, ltp: 88.35 },
+  { ticker: 'DMC', qty: 800, avg: 9.77, ltp: 9.19 },
+  { ticker: 'MER', qty: 2, avg: 590.71, ltp: 608.00 }
+];
+
+function getStocks() {
+  const saved = localStorage.getItem('investmentDashboard');
+  if (saved === null) return defaultStocks;
+  try { return JSON.parse(saved); } catch { return defaultStocks; }
+}
+function setStocks(stocks) { localStorage.setItem('investmentDashboard', JSON.stringify(stocks)); }
+function money(n) { return '₱' + Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+function renderStocks() {
+  const stocks = getStocks();
+  const rows = document.getElementById('stockRows');
+  rows.innerHTML = '';
+  let totalCost = 0, totalValue = 0;
+
+  stocks.forEach((s, i) => {
+    const cost = s.qty * s.avg;
+    const value = s.qty * s.ltp;
+    const pnl = value - cost;
+    const pnlPct = cost ? (pnl / cost) * 100 : 0;
+    totalCost += cost;
+    totalValue += value;
+    rows.innerHTML += `
+      <tr>
+        <td><b>${s.ticker}</b></td>
+        <td>${s.qty}</td>
+        <td>${money(s.avg)}</td>
+        <td>${money(s.ltp)}</td>
+        <td>${money(value)}</td>
+        <td class="${pnl >= 0 ? 'pos' : 'neg'}">${money(pnl)}</td>
+        <td class="${pnlPct >= 0 ? 'pos' : 'neg'}">${pnlPct.toFixed(2)}%</td>
+        <td>
+          <button class="btn-gray" onclick="editStock(${i})">Edit</button>
+          <button class="btn-red" onclick="deleteStock(${i})">Delete</button>
+        </td>
+      </tr>`;
+  });
+
+  const totalPnl = totalValue - totalCost;
+  const totalPnlPct = totalCost ? (totalPnl / totalCost) * 100 : 0;
+  document.getElementById('summary').innerHTML = `
+    <div class="summary-box"><div class="label">Total Cost</div><div class="value">${money(totalCost)}</div></div>
+    <div class="summary-box"><div class="label">Market Value</div><div class="value">${money(totalValue)}</div></div>
+    <div class="summary-box"><div class="label">Total P/L</div><div class="value ${totalPnl >= 0 ? 'pos' : 'neg'}">${money(totalPnl)}</div></div>
+    <div class="summary-box"><div class="label">Total P/L %</div><div class="value ${totalPnlPct >= 0 ? 'pos' : 'neg'}">${totalPnlPct.toFixed(2)}%</div></div>`;
+}
+
+function saveStock() {
+  const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+  const qty = Number(document.getElementById('qty').value);
+  const avg = Number(document.getElementById('avg').value);
+  const ltp = Number(document.getElementById('ltp').value);
+  const editIndex = document.getElementById('editIndex').value;
+
+  if (!ticker || qty <= 0 || avg <= 0 || ltp <= 0) {
+    alert('Please complete all fields with valid values.');
+    return;
+  }
+
+  const stocks = getStocks();
+  const newStock = { ticker, qty, avg, ltp };
+  if (editIndex === '') stocks.push(newStock);
+  else stocks[Number(editIndex)] = newStock;
+
+  setStocks(stocks);
+  clearForm();
+  renderStocks();
+}
+
+function editStock(index) {
+  const stock = getStocks()[index];
+  document.getElementById('formTitle').innerText = '✏️ Edit Stock';
+  document.getElementById('editIndex').value = index;
+  document.getElementById('ticker').value = stock.ticker;
+  document.getElementById('qty').value = stock.qty;
+  document.getElementById('avg').value = stock.avg;
+  document.getElementById('ltp').value = stock.ltp;
+}
+
+function deleteStock(index) {
+  if (!confirm('Delete this stock?')) return;
+  const stocks = getStocks();
+  stocks.splice(index, 1);
+  setStocks(stocks);
+  renderStocks();
+}
+
+function deleteAllStocks() {
+  if (!confirm('Delete all saved stocks?')) return;
+  setStocks([]);
+  clearForm();
+  renderStocks();
+}
+
+function clearForm() {
+  document.getElementById('formTitle').innerText = '➕ Add Stock';
+  document.getElementById('editIndex').value = '';
+  document.getElementById('ticker').value = '';
+  document.getElementById('qty').value = '';
+  document.getElementById('avg').value = '';
+  document.getElementById('ltp').value = '';
+}
+
+async function analyzePortfolio() {
+  const stocks = getStocks();
+  const result = document.getElementById('aiResult');
+  result.innerText = 'Analyzing your saved portfolio with ChatGPT...';
+
+  try {
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        task: 'portfolio-analysis',
+        portfolio: stocks,
+        prompt: 'Analyze this investment portfolio, including stocks, crypto, and funds when available. Give concise actions: hold, add, trim, sell, and risk notes.'
+      })
+    });
+
+    const data = await response.json();
+    result.innerText = data.reply || data.error || 'No AI response received.';
+  } catch (err) {
+    result.innerText = 'AI is not connected yet. This will work after Vercel deployment and OPENAI_API_KEY setup.';
+  }
+}
+
+renderStocks();
+</script>
+</body>
+</html>

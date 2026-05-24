@@ -1,480 +1,1289 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Investment Dashboard</title>
-  <style>
-    * { box-sizing: border-box; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Investment Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a0e1a;color:#e0e6f0;font-family:'Segoe UI',sans-serif;min-height:100vh;}
+.header{background:linear-gradient(135deg,#0d1b2a,#1a2a4a);padding:14px 16px;border-bottom:1px solid #1e3a5f;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.pval .v{font-size:1.4rem;font-weight:700;color:#fff;}.pval .s{font-size:.7rem;color:#7fa8c9;}
+.snap-bar{padding:8px 16px;background:#0d1421;border-bottom:1px solid #1e3a5f;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.storage-status{font-size:.68rem;padding:3px 10px;border-radius:10px;background:#0d3b1e;color:#4caf50;border:1px solid #2e7d32;}
+.tabbar{background:#0d1421;border-bottom:1px solid #1e3a5f;padding:8px 10px;}
+.tabrow{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:5px;}
+.tabrow:last-child{margin-bottom:0;}
+.tab{padding:7px 4px;border-radius:8px;cursor:pointer;font-size:.72rem;white-space:nowrap;border:1px solid #1e3a5f;color:#7fa8c9;background:#0a0e1a;text-align:center;transition:all .2s;}
+.tab.active{background:#1565c0;color:#fff;border-color:#1565c0;}
+.tab:hover:not(.active){background:#0d1b2a;color:#b0c4d8;}
+.content{padding:14px;}
+.tab-content{display:none;}.tab-content.active{display:block;}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:14px;}
+.sc{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:8px;padding:11px;}
+.sc .sl{font-size:.65rem;color:#7fa8c9;margin-bottom:3px;}.sc .sv{font-size:1rem;font-weight:700;}
+.section-title{font-size:.82rem;color:#4fc3f7;margin:14px 0 8px;letter-spacing:.5px;text-transform:uppercase;}
+.port-header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;margin:12px 0 6px;font-size:.8rem;font-weight:700;}
+.port-pse{background:#0d1b3a;border:1px solid #1565c0;color:#4fc3f7;}
+.port-crypto{background:#1a0d2e;border:1px solid #7b1fa2;color:#ce93d8;}
+.port-funds{background:#0d2a1a;border:1px solid #2e7d32;color:#81c784;}
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.76rem;margin-bottom:10px;}
+th{background:#0d1b2a;color:#4fc3f7;padding:8px 7px;text-align:right;border-bottom:1px solid #1e3a5f;white-space:nowrap;}
+th:first-child{text-align:left;}
+td{padding:8px 7px;border-bottom:1px solid #0d1421;text-align:right;vertical-align:middle;}
+td:first-child{text-align:left;font-weight:600;color:#fff;}
+tr:hover td{background:#0d1b2a;}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:.66rem;font-weight:700;}
+.buy{background:#0d3b1e;color:#4caf50;border:1px solid #2e7d32;}
+.sell{background:#3b0d0d;color:#ef5350;border:1px solid #b71c1c;}
+.hold{background:#1a2a0d;color:#ffd54f;border:1px solid #f57f17;}
+.strong-buy{background:#0d3b1e;color:#4caf50;border:1px solid #2e7d32;}
+.strong-sell{background:#3b0d0d;color:#ef5350;border:1px solid #b71c1c;}
+.pos{color:#4caf50;}.neg{color:#ef5350;}
+.stock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+.stock-card{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;overflow:hidden;}
+.card-header{padding:10px 13px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e3a5f;}
+.card-ticker{font-size:1rem;font-weight:700;color:#fff;}
+.card-sub{font-size:.65rem;color:#7fa8c9;}
+.card-body{padding:12px;}
+.scenarios{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0;}
+.scenario{background:#0a0e1a;border-radius:6px;padding:7px;text-align:center;}
+.sc-label{font-size:.62rem;color:#7fa8c9;margin-bottom:3px;}.sc-val{font-size:.85rem;font-weight:700;}
+.bull{color:#4caf50;}.base{color:#ffd54f;}.bear{color:#ef5350;}
+.price-targets{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin:7px 0;}
+.pt{background:#0a0e1a;border-radius:6px;padding:6px;text-align:center;}
+.pt-label{font-size:.58rem;color:#7fa8c9;margin-bottom:2px;}.pt-val{font-size:.8rem;font-weight:700;color:#fff;}
+.briefer-box{background:#0a0e1a;border-radius:6px;padding:9px;margin-top:8px;font-size:.72rem;color:#b0c4d8;line-height:1.6;min-height:50px;}
+.loading{color:#4fc3f7;font-style:italic;display:flex;align-items:center;gap:6px;}
+.spinner{width:11px;height:11px;border:2px solid #1e3a5f;border-top-color:#4fc3f7;border-radius:50%;animation:spin .8s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.btn-sm{border:none;padding:5px 10px;border-radius:5px;font-size:.68rem;cursor:pointer;transition:all .2s;}
+.btn-blue{background:#1565c0;color:#fff;}.btn-blue:hover{background:#1976d2;}
+.btn-purple{background:#6a1b9a;color:#fff;}.btn-purple:hover{background:#7b1fa2;}
+.btn-sm:disabled{background:#1e3a5f;color:#7fa8c9;cursor:not-allowed;}
+.card-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.saved-tag{font-size:.6rem;color:#4caf50;margin-left:4px;}
+.analyze-all-btn{background:linear-gradient(135deg,#1565c0,#0d47a1);color:#fff;border:none;padding:9px 18px;border-radius:7px;cursor:pointer;font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:14px;transition:opacity .2s;}
+.analyze-all-btn:hover{opacity:.9;}.analyze-all-btn:disabled{opacity:.5;cursor:not-allowed;}
+.chart-wrap{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:13px;margin-bottom:13px;}
+.chart-title{font-size:.82rem;color:#4fc3f7;margin-bottom:10px;}
+.total-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.total-seg{border-radius:8px;padding:10px;text-align:center;}
+.total-seg .ts-label{font-size:.65rem;margin-bottom:4px;}.total-seg .ts-val{font-size:.95rem;font-weight:700;}
+.seg-pse{background:#0d1b3a;border:1px solid #1565c0;}
+.seg-crypto{background:#1a0d2e;border:1px solid #7b1fa2;}
+.seg-funds{background:#0d2a1a;border:1px solid #2e7d32;}
+.risk-badge{font-size:.68rem;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:8px;}
+.health-wrap{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;margin-bottom:14px;}
+.health-score-circle{width:90px;height:90px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 12px;border:4px solid #1e3a5f;}
+.health-score-num{font-size:1.8rem;font-weight:700;line-height:1;}
+.health-score-lbl{font-size:.6rem;color:#7fa8c9;margin-top:2px;}
+.health-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:12px 0;}
+.health-card{background:#0a0e1a;border-radius:8px;padding:10px;text-align:center;}
+.health-card .hc-label{font-size:.62rem;color:#7fa8c9;margin-bottom:4px;}
+.health-card .hc-val{font-size:.85rem;font-weight:700;}
+.action-items{background:#0a0e1a;border-radius:8px;padding:10px;margin-top:8px;}
+.action-item{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #0d1b2a;font-size:.75rem;color:#b0c4d8;}
+.action-item:last-child{border-bottom:none;}
+.score-excellent{border-color:#4caf50;color:#4caf50;}
+.score-good{border-color:#8bc34a;color:#8bc34a;}
+.score-fair{border-color:#ffd54f;color:#ffd54f;}
+.score-poor{border-color:#ef5350;color:#ef5350;}
+.ti-wrap{background:#0a0e1a;border-radius:8px;padding:10px;margin-top:8px;}
+.ti-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
+.ti-item{background:#0d1b2a;border-radius:6px;padding:7px;}
+.ti-label{font-size:.58rem;color:#7fa8c9;margin-bottom:3px;}
+.ti-val{font-size:.78rem;font-weight:700;}
+.ti-signal{font-size:.65rem;margin-top:2px;}
+.overbought{color:#ef5350;}.oversold{color:#4caf50;}.neutral{color:#ffd54f;}
+.bullish{color:#4caf50;}.bearish{color:#ef5350;}
+.predict-wrap{background:#0a0e1a;border-radius:8px;padding:10px;margin-top:8px;border:1px solid #1a2a4a;}
+.predict-header{font-size:.68rem;color:#ce93d8;margin-bottom:8px;font-weight:700;}
+.predict-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.predict-item{background:#0d1b2a;border-radius:6px;padding:7px;}
+.predict-label{font-size:.58rem;color:#7fa8c9;margin-bottom:2px;}
+.predict-val{font-size:.8rem;font-weight:700;}
+.predict-pattern{background:#0d1b2a;border-radius:6px;padding:8px;margin-bottom:6px;}
+.predict-trigger{background:#0d1b2a;border-radius:6px;padding:8px;font-size:.72rem;color:#b0c4d8;line-height:1.5;}
+.confidence-bar{height:6px;border-radius:3px;background:#1e3a5f;margin-top:4px;}
+.confidence-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#ef5350,#ffd54f,#4caf50);}
+.up-pred{color:#4caf50;}.down-pred{color:#ef5350;}.sideways-pred{color:#ffd54f;}
+.div-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:14px;}
+.div-sum-card{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:8px;padding:11px;text-align:center;}
+.div-sum-label{font-size:.62rem;color:#7fa8c9;margin-bottom:4px;}
+.div-sum-val{font-size:1rem;font-weight:700;color:#4caf50;}
+.div-card{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.div-card-header{padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e3a5f;}
+.div-card-body{padding:12px 14px;}
+.div-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+.div-item{background:#0a0e1a;border-radius:6px;padding:8px;}
+.div-item-label{font-size:.6rem;color:#7fa8c9;margin-bottom:3px;}
+.div-item-val{font-size:.82rem;font-weight:700;color:#fff;}
+.div-income{background:#0d3b1e;border:1px solid #2e7d32;border-radius:8px;padding:10px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;}
+.no-div{background:#1a1a0d;border:1px solid #3a3a00;border-radius:6px;padding:8px;font-size:.72rem;color:#7fa8c9;margin-top:6px;}
+.sb-result-card{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;margin-bottom:12px;}
+.sb-year-item{background:#0a0e1a;border-radius:8px;padding:10px;text-align:center;}
+.sb-year-label{font-size:.62rem;color:#7fa8c9;margin-bottom:4px;}
+.sb-year-val{font-size:.9rem;font-weight:700;color:#4fc3f7;}
+.sb-bar-wrap{background:#0a0e1a;border-radius:8px;padding:12px;margin:10px 0;}
+.sb-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.sb-bar-label{font-size:.68rem;color:#7fa8c9;width:50px;flex-shrink:0;}
+.sb-bar-bg{flex:1;background:#1e3a5f;border-radius:4px;height:20px;position:relative;overflow:hidden;}
+.sb-bar-fill{height:100%;border-radius:4px;}
+.sb-bar-val{font-size:.66rem;color:#fff;position:absolute;right:6px;top:50%;transform:translateY(-50%);white-space:nowrap;}
+.rz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.rz-card{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;}
+.risk-meter{display:flex;gap:4px;margin:8px 0;}
+.risk-seg{height:8px;flex:1;border-radius:4px;}
+.zone-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:700;margin-top:6px;}
+.zone-buy{background:#0d3b1e;color:#4caf50;border:1px solid #2e7d32;}
+.zone-neutral{background:#1a2a0d;color:#ffd54f;border:1px solid #f57f17;}
+.zone-overvalued{background:#3b1a0d;color:#ff9800;border:1px solid #e65100;}
+.zone-highrisk{background:#3b0d0d;color:#ef5350;border:1px solid #b71c1c;}
+.risk-def{background:#0d3b1e;color:#4caf50;border:1px solid #2e7d32;}
+.risk-cyc{background:#1a2a0d;color:#ffd54f;border:1px solid #f57f17;}
+.risk-rec{background:#0d1b3a;color:#4fc3f7;border:1px solid #1565c0;}
+.risk-spec{background:#3b0d0d;color:#ef5350;border:1px solid #b71c1c;}
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0a0e1a;
-      color: #e0e6f0;
-    }
+/* Portfolio editor added by ChatGPT */
+.portfolio-editor{background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;margin-bottom:14px;}
+.editor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:8px;}
+.editor-field label{display:block;font-size:.62rem;color:#7fa8c9;margin-bottom:4px;}
+.editor-field input{width:100%;background:#0a0e1a;color:#fff;border:1px solid #1e3a5f;border-radius:6px;padding:8px;font-size:.78rem;}
+.editor-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.editor-title{font-size:.85rem;color:#4fc3f7;font-weight:700;margin-bottom:4px;}
+.editor-note{font-size:.68rem;color:#7fa8c9;line-height:1.4;}
+.action-btn{border:none;border-radius:5px;padding:5px 9px;font-size:.66rem;cursor:pointer;margin:2px;}
+.action-edit{background:#1565c0;color:#fff;}
+.action-delete{background:#7f1d1d;color:#fff;}
 
-    .header {
-      padding: 18px;
-      background: linear-gradient(135deg, #0d1b2a, #1a2a4a);
-      border-bottom: 1px solid #1e3a5f;
-    }
-
-    .header h1 {
-      margin: 0;
-      color: #4fc3f7;
-      font-size: 1.3rem;
-    }
-
-    .header p {
-      margin: 4px 0 0;
-      color: #7fa8c9;
-      font-size: .85rem;
-    }
-
-    .wrap {
-      padding: 16px;
-      max-width: 1200px;
-      margin: auto;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 16px;
-    }
-
-    .card {
-      background: #0d1b2a;
-      border: 1px solid #1e3a5f;
-      border-radius: 12px;
-      padding: 14px;
-    }
-
-    .card h2 {
-      margin: 0 0 12px;
-      color: #4fc3f7;
-      font-size: 1rem;
-    }
-
-    label {
-      display: block;
-      margin: 10px 0 4px;
-      color: #7fa8c9;
-      font-size: .75rem;
-    }
-
-    input {
-      width: 100%;
-      padding: 9px;
-      border-radius: 8px;
-      border: 1px solid #1e3a5f;
-      background: #0a0e1a;
-      color: white;
-    }
-
-    button {
-      border: 0;
-      padding: 9px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 700;
-      margin-top: 10px;
-    }
-
-    .btn-primary {
-      background: #1565c0;
-      color: white;
-    }
-
-    .btn-green {
-      background: #1b5e20;
-      color: white;
-    }
-
-    .btn-red {
-      background: #7f1d1d;
-      color: white;
-    }
-
-    .btn-gray {
-      background: #26364d;
-      color: white;
-    }
-
-    .actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: .82rem;
-    }
-
-    th, td {
-      padding: 9px;
-      border-bottom: 1px solid #16263d;
-      text-align: right;
-    }
-
-    th:first-child,
-    td:first-child {
-      text-align: left;
-    }
-
-    th {
-      color: #4fc3f7;
-      background: #0a0e1a;
-    }
-
-    .pos {
-      color: #4caf50;
-    }
-
-    .neg {
-      color: #ef5350;
-    }
-
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
-    .summary-box {
-      background: #0a0e1a;
-      border-radius: 10px;
-      padding: 12px;
-      border: 1px solid #1e3a5f;
-    }
-
-    .summary-box .label {
-      color: #7fa8c9;
-      font-size: .7rem;
-    }
-
-    .summary-box .value {
-      color: white;
-      font-size: 1.1rem;
-      font-weight: 800;
-      margin-top: 4px;
-    }
-
-    .ai-box {
-      white-space: pre-wrap;
-      background: #0a0e1a;
-      border-radius: 10px;
-      padding: 12px;
-      min-height: 120px;
-      color: #dbeafe;
-      line-height: 1.5;
-      margin-top: 12px;
-      border: 1px solid #1e3a5f;
-    }
-
-    .small {
-      font-size: .72rem;
-      color: #7fa8c9;
-      margin-top: 8px;
-    }
-
-    @media (max-width: 850px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+</style>
 </head>
-
 <body>
-  <div class="header">
-    <h1>💼 Investment Dashboard</h1>
-    <p>Add, edit, delete, and save your portfolio. Then ask ChatGPT to analyze it.</p>
+<div class="header">
+  <div>
+    <div style="font-size:1.1rem;color:#4fc3f7;letter-spacing:1px;font-weight:700;">💼 INVESTMENT DASHBOARD</div>
+    <div style="font-size:.68rem;color:#7fa8c9;margin-top:2px;">PSE Stocks · Crypto · Mutual Funds</div>
   </div>
+  <div class="pval" style="text-align:right;">
+    <div class="v" id="headerTotalValue">&#8369;26,404.39</div>
+    <div class="s">Total Portfolio Value</div>
+    <div style="font-size:.65rem;color:#4fc3f7;margin-top:3px;">🕒 Last updated: May 21, 2026</div>
+  </div>
+</div>
 
-  <div class="wrap">
-    <div class="summary" id="summary"></div>
+<div class="snap-bar">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <span class="storage-status" id="storageStatus">⚡ Auto-save ON</span>
+    <span style="font-size:.68rem;color:#7fa8c9;">All AI results saved automatically & restored on reload</span>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button onclick="saveDashboard()" style="background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;">💾 Save Snapshot</button>
+    <button onclick="clearAllStorage()" style="background:#3b0d0d;color:#ef5350;border:1px solid #b71c1c;padding:5px 12px;border-radius:6px;font-size:.72rem;cursor:pointer;">🗑️ Clear Saved Data</button>
+  </div>
+</div>
 
-    <div class="grid">
-      <div class="card">
-        <h2 id="formTitle">➕ Add Stock</h2>
+<div class="tabbar">
+  <div class="tabrow">
+    <div class="tab active" id="t-overview" onclick="switchTab('overview',this)">Overview</div>
+    <div class="tab" id="t-analysis" onclick="switchTab('analysis',this)">AI Analysis</div>
+    <div class="tab" id="t-briefer" onclick="switchTab('briefer',this)">Briefer</div>
+    <div class="tab" id="t-charts" onclick="switchTab('charts',this)">Charts</div>
+  </div>
+  <div class="tabrow">
+    <div class="tab" id="t-picks" onclick="switchTab('picks',this)">🔭 Picks</div>
+    <div class="tab" id="t-dividends" onclick="switchTab('dividends',this)">💰 Dividends</div>
+    <div class="tab" id="t-snowball" onclick="switchTab('snowball',this)">❄️ Snowball</div>
+    <div class="tab" id="t-riskzone" onclick="switchTab('riskzone',this)">🎯 Risk & Zone</div>
+  </div>
+</div>
 
-        <input type="hidden" id="editIndex" value="" />
+<div class="content">
 
-        <label>Ticker</label>
-        <input id="ticker" placeholder="Example: BDO" />
-
-        <label>Quantity</label>
-        <input id="qty" type="number" placeholder="Example: 46" />
-
-        <label>Average Buy Price</label>
-        <input id="avg" type="number" step="0.01" placeholder="Example: 102.23" />
-
-        <label>Latest Price / LTP</label>
-        <input id="ltp" type="number" step="0.01" placeholder="Example: 115.00" />
-
-        <div class="actions">
-          <button class="btn-green" onclick="saveStock()">💾 Save Stock</button>
-          <button class="btn-gray" onclick="clearForm()">Clear</button>
-        </div>
-
-        <div class="small">
-          Your investments are saved in your browser using localStorage. No database needed for now.
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>📈 My Stocks</h2>
-
-        <div style="overflow-x:auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>Ticker</th>
-                <th>Qty</th>
-                <th>Avg</th>
-                <th>LTP</th>
-                <th>Market Value</th>
-                <th>P/L</th>
-                <th>P/L %</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody id="stockRows"></tbody>
-          </table>
-        </div>
-
-        <div class="actions">
-          <button class="btn-primary" onclick="analyzePortfolio()">🤖 Analyze with ChatGPT</button>
-          <button class="btn-red" onclick="deleteAllStocks()">🗑️ Delete All</button>
-        </div>
-
-        <div class="ai-box" id="aiResult">
-          AI analysis will appear here after OpenAI API setup.
-        </div>
-      </div>
+<div id="tab-overview" class="tab-content active">
+  <div class="total-bar">
+    <div class="total-seg seg-pse"><div class="ts-label" style="color:#4fc3f7">📈 PSE</div><div class="ts-val" id="pseTotalValue" style="color:#4fc3f7">&#8369;19,850.10</div></div>
+    <div class="total-seg seg-crypto"><div class="ts-label" style="color:#ce93d8">₿ CRYPTO</div><div class="ts-val" id="cryptoTotalValue" style="color:#ce93d8">&#8369;4,506.75</div></div>
+    <div class="total-seg seg-funds"><div class="ts-label" style="color:#81c784">🏦 GFUNDS</div><div class="ts-val" id="fundsTotalValue" style="color:#81c784">&#8369;2,047.54</div></div>
+  </div>
+  <div class="summary-grid" id="summaryCards"></div>
+  <div class="health-wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div style="font-size:.85rem;color:#4fc3f7;font-weight:700;">🏥 Portfolio Health Score</div>
+      <button class="btn-sm btn-blue" onclick="generateHealthScore()" id="healthBtn">🏥 Generate</button>
+    </div>
+    <div id="healthContent"><div style="font-size:.75rem;color:#4a6080;font-style:italic;text-align:center;padding:20px;">Click Generate to analyze your portfolio health.</div></div>
+  </div>
+  <div class="port-header port-pse">📈 PSE STOCKS</div>
+  <div class="portfolio-editor">
+    <div class="editor-title" id="portfolioEditorTitle">➕ Add / Edit PSE Stock</div>
+    <div class="editor-note">Use this form to update the stocks shown in your original dashboard. Saved in this browser using localStorage.</div>
+    <input type="hidden" id="editStockIndex" value="">
+    <div class="editor-grid">
+      <div class="editor-field"><label>Ticker</label><input id="stockTicker" placeholder="BDO"></div>
+      <div class="editor-field"><label>Quantity</label><input id="stockQty" type="number" step="1" placeholder="46"></div>
+      <div class="editor-field"><label>Average Price</label><input id="stockAvg" type="number" step="0.0001" placeholder="102.2291"></div>
+      <div class="editor-field"><label>Latest Price / LTP</label><input id="stockLtp" type="number" step="0.0001" placeholder="114.90"></div>
+    </div>
+    <div class="editor-actions">
+      <button class="btn-sm btn-blue" onclick="savePSEStock()" style="padding:8px 14px;">💾 Save Stock</button>
+      <button class="btn-sm" onclick="clearPSEForm()" style="background:#26364d;color:#fff;padding:8px 14px;">Clear Form</button>
+      <button class="btn-sm" onclick="resetPSEStocks()" style="background:#3b0d0d;color:#ef5350;border:1px solid #b71c1c;padding:8px 14px;">Reset to Original Stocks</button>
     </div>
   </div>
+  <div class="tw"><table><thead><tr><th>Stock</th><th>Qty</th><th>Avg Price</th><th>LTP</th><th>Mkt Val</th><th>P&L</th><th>P&L%</th><th>Signal</th><th>Actions</th></tr></thead><tbody id="pseBody"></tbody></table></div>
+  <div class="port-header port-crypto">₿ CRYPTO</div>
+  <div class="portfolio-editor">
+    <div class="editor-title" id="cryptoEditorTitle">➕ Add / Edit Crypto</div>
+    <div class="editor-note">Use this form to update the crypto assets shown in your original dashboard. Saved in this browser using localStorage.</div>
+    <input type="hidden" id="editCryptoIndex" value="">
+    <div class="editor-grid">
+      <div class="editor-field"><label>Ticker</label><input id="cryptoTicker" placeholder="BTC"></div>
+      <div class="editor-field"><label>Name</label><input id="cryptoName" placeholder="Bitcoin"></div>
+      <div class="editor-field"><label>Holdings</label><input id="cryptoHoldings" placeholder="0.00016336 BTC"></div>
+      <div class="editor-field"><label>Current Value (₱)</label><input id="cryptoValue" type="number" step="0.01" placeholder="781.91"></div>
+      <div class="editor-field"><label>24h Change (%)</label><input id="cryptoChange" type="number" step="0.01" placeholder="-17.16"></div>
+      <div class="editor-field"><label>Total Cost (₱)</label><input id="cryptoCost" type="number" step="0.01" placeholder="3559.91"></div>
+      <div class="editor-field"><label>Unrealized P/L (₱)</label><input id="cryptoUnrealized" type="number" step="0.01" placeholder="-169.57"></div>
+      <div class="editor-field"><label>Realized P/L (₱)</label><input id="cryptoRealized" type="number" step="0.01" placeholder="-2752.35"></div>
+    </div>
+    <div class="editor-actions">
+      <button class="btn-sm btn-purple" onclick="saveCryptoAsset()" style="padding:8px 14px;">💾 Save Crypto</button>
+      <button class="btn-sm" onclick="clearCryptoForm()" style="background:#26364d;color:#fff;padding:8px 14px;">Clear Form</button>
+      <button class="btn-sm" onclick="resetCryptoAssets()" style="background:#3b0d0d;color:#ef5350;border:1px solid #b71c1c;padding:8px 14px;">Reset to Original Crypto</button>
+    </div>
+  </div>
+  <div class="tw"><table><thead><tr><th>Asset</th><th>Holdings</th><th>Value</th><th>24h</th><th>Unrealized</th><th>Realized</th><th>Signal</th><th>Actions</th></tr></thead><tbody id="cryptoBody"></tbody></table></div>
+  <div class="port-header port-funds">🏦 GFUNDS</div>
+  <div class="portfolio-editor">
+    <div class="editor-title" id="fundEditorTitle">➕ Add / Edit GFund</div>
+    <div class="editor-note">Use this form to update GFunds / mutual funds shown in your original dashboard. Saved in this browser using localStorage.</div>
+    <input type="hidden" id="editFundIndex" value="">
+    <div class="editor-grid">
+      <div class="editor-field"><label>Ticker / Code</label><input id="fundTicker" placeholder="ATRAM-TECH"></div>
+      <div class="editor-field"><label>Fund Name</label><input id="fundName" placeholder="ATRAM Global Technology Feeder Fund"></div>
+      <div class="editor-field"><label>Provider</label><input id="fundProvider" placeholder="ATRAM"></div>
+      <div class="editor-field"><label>Current Value (₱)</label><input id="fundValue" type="number" step="0.01" placeholder="785.11"></div>
+      <div class="editor-field"><label>Units</label><input id="fundUnits" type="number" step="0.0001" placeholder="1.5787"></div>
+      <div class="editor-field"><label>NAVPU</label><input id="fundNavpu" type="number" step="0.000001" placeholder="495.475845"></div>
+      <div class="editor-field"><label>1-Year Return (%)</label><input id="fundReturn" type="number" step="0.01" placeholder="45.86"></div>
+    </div>
+    <div class="editor-actions">
+      <button class="btn-sm" onclick="saveFundAsset()" style="background:#2e7d32;color:#fff;padding:8px 14px;">💾 Save GFund</button>
+      <button class="btn-sm" onclick="clearFundForm()" style="background:#26364d;color:#fff;padding:8px 14px;">Clear Form</button>
+      <button class="btn-sm" onclick="resetFundAssets()" style="background:#3b0d0d;color:#ef5350;border:1px solid #b71c1c;padding:8px 14px;">Reset to Original GFunds</button>
+    </div>
+  </div>
+  <div class="tw"><table><thead><tr><th>Fund</th><th>Provider</th><th>Value</th><th>Units</th><th>NAVPU</th><th>1yr Return</th><th>Signal</th><th>Actions</th></tr></thead><tbody id="fundsBody"></tbody></table></div>
+</div>
+
+<div id="tab-analysis" class="tab-content">
+  <button class="analyze-all-btn" id="analyzeAllBtn" onclick="analyzeAll()"><span>🤖</span> Analyze All Assets</button>
+  <div class="section-title">📈 PSE Stocks</div><div class="stock-grid" id="pseAnalysisGrid"></div>
+  <div class="section-title" style="margin-top:18px;">₿ Crypto</div><div class="stock-grid" id="cryptoAnalysisGrid"></div>
+  <div class="section-title" style="margin-top:18px;">🏦 Mutual Funds</div><div class="stock-grid" id="fundsAnalysisGrid"></div>
+</div>
+
+<div id="tab-briefer" class="tab-content">
+  <button class="analyze-all-btn" id="briefAllBtn" onclick="briefAll()"><span>📰</span> Research All Assets</button>
+  <div class="section-title">📈 PSE Stocks</div><div class="stock-grid" id="pseBrieferGrid"></div>
+  <div class="section-title" style="margin-top:18px;">₿ Crypto</div><div class="stock-grid" id="cryptoBrieferGrid"></div>
+  <div class="section-title" style="margin-top:18px;">🏦 Mutual Funds</div><div class="stock-grid" id="fundsBrieferGrid"></div>
+</div>
+
+<div id="tab-charts" class="tab-content">
+  <div class="chart-wrap"><div class="chart-title">Portfolio Allocation by Asset Class</div><canvas id="allocByClass" height="200"></canvas></div>
+  <div class="chart-wrap"><div class="chart-title">PSE Stocks — P&L per Position</div><canvas id="psePnlChart" height="200"></canvas></div>
+  <div class="chart-wrap"><div class="chart-title">All Holdings — Market Value Distribution</div><canvas id="allAllocChart" height="220"></canvas></div>
+</div>
+
+<div id="tab-picks" class="tab-content">
+  <div style="background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div style="font-size:.85rem;color:#4fc3f7;font-weight:700;margin-bottom:6px;">🔭 AI-Powered Stock Picks</div>
+    <div style="font-size:.75rem;color:#b0c4d8;">Promising investments <b style="color:#fff">NOT in your portfolio</b>. Results auto-saved.</div>
+  </div>
+  <button class="analyze-all-btn" id="picksBtn" onclick="generatePicks()"><span>🔍</span> Find Promising Investments Now</button>
+  <div id="picksLoading" style="display:none;padding:20px;text-align:center;"><div class="loading" style="justify-content:center;"><span class="spinner"></span> Researching...</div></div>
+  <div id="picksContainer"></div>
+</div>
+
+<div id="tab-dividends" class="tab-content">
+  <div style="background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div style="font-size:.85rem;color:#4fc3f7;font-weight:700;margin-bottom:6px;">💰 Dividend Tracker</div>
+    <div style="font-size:.75rem;color:#b0c4d8;">Latest PSE dividend data. Results auto-saved. Refresh weekly.</div>
+  </div>
+  <button class="analyze-all-btn" id="divBtn" onclick="loadDividends()"><span>🔍</span> Load Dividend Data</button>
+  <div id="divLoading" style="display:none;padding:20px;text-align:center;"><div class="loading" style="justify-content:center;"><span class="spinner"></span> Searching...</div></div>
+  <div id="divSummary"></div>
+  <div id="divContainer"></div>
+</div>
+
+<div id="tab-snowball" class="tab-content">
+  <div style="background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div style="font-size:.85rem;color:#4fc3f7;font-weight:700;margin-bottom:4px;">❄️ Dividend Snowball Calculator</div>
+    <div style="font-size:.75rem;color:#b0c4d8;">Project dividend income growth. Pure math — instant, zero tokens!</div>
+  </div>
+  <div style="background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:12px;">
+      <div><div style="font-size:.65rem;color:#7fa8c9;margin-bottom:4px;">Monthly Investment (&#8369;)</div><input id="sb-monthly" type="number" value="5000" style="width:100%;background:#0a0e1a;color:#fff;border:1px solid #1e3a5f;border-radius:6px;padding:7px 10px;font-size:.82rem;"/></div>
+      <div><div style="font-size:.65rem;color:#7fa8c9;margin-bottom:4px;">Target Stock</div>
+        <select id="sb-stock" style="width:100%;background:#0a0e1a;color:#fff;border:1px solid #1e3a5f;border-radius:6px;padding:7px 10px;font-size:.82rem;">
+          <option value="MER">MER (5.7%)</option><option value="DMC">DMC (3.5%)</option><option value="BPI">BPI (2.8%)</option>
+          <option value="NIKL">NIKL (2.2%)</option><option value="BDO">BDO (2.1%)</option><option value="SMPH">SMPH (1.8%)</option>
+          <option value="ALI">ALI (1.2%)</option><option value="PCOR">PCOR (0.5%)</option><option value="CEB">CEB (0%)</option><option value="DITO">DITO (0%)</option>
+        </select>
+      </div>
+      <div><div style="font-size:.65rem;color:#7fa8c9;margin-bottom:4px;">Dividend Yield % (annual)</div><input id="sb-yield" type="number" value="5.7" step="0.1" style="width:100%;background:#0a0e1a;color:#fff;border:1px solid #1e3a5f;border-radius:6px;padding:7px 10px;font-size:.82rem;"/></div>
+      <div><div style="font-size:.65rem;color:#7fa8c9;margin-bottom:4px;">Stock Growth %/yr</div><input id="sb-growth" type="number" value="5" step="0.5" style="width:100%;background:#0a0e1a;color:#fff;border:1px solid #1e3a5f;border-radius:6px;padding:7px 10px;font-size:.82rem;"/></div>
+      <div><div style="font-size:.65rem;color:#7fa8c9;margin-bottom:4px;">Reinvest Dividends?</div>
+        <select id="sb-reinvest" style="width:100%;background:#0a0e1a;color:#fff;border:1px solid #1e3a5f;border-radius:6px;padding:7px 10px;font-size:.82rem;">
+          <option value="yes">Yes — Reinvest all</option><option value="no">No — Take as cash</option>
+        </select>
+      </div>
+      <div><div style="font-size:.65rem;color:#7fa8c9;margin-bottom:4px;">Projection Years</div>
+        <select id="sb-years" style="width:100%;background:#0a0e1a;color:#fff;border:1px solid #1e3a5f;border-radius:6px;padding:7px 10px;font-size:.82rem;">
+          <option value="3">3 Years (2029)</option><option value="5" selected>5 Years (2031)</option>
+          <option value="10">10 Years (2036)</option><option value="15">15 Years (2041)</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-sm btn-blue" onclick="calcSnowball()" style="padding:8px 20px;font-size:.8rem;">📊 Calculate Snowball</button>
+  </div>
+  <div id="sb-results"></div>
+</div>
+
+<div id="tab-riskzone" class="tab-content">
+  <div style="background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div style="font-size:.85rem;color:#4fc3f7;font-weight:700;margin-bottom:4px;">🎯 Risk Meter & Buy Zone Monitor</div>
+    <div style="font-size:.75rem;color:#b0c4d8;">Each stock's risk category and buy zone. Results auto-saved.</div>
+  </div>
+  <button class="analyze-all-btn" id="rzBtn" onclick="loadRiskZone()"><span>🎯</span> Load Risk & Buy Zone Analysis</button>
+  <div id="rzLoading" style="display:none;padding:20px;text-align:center;"><div class="loading" style="justify-content:center;"><span class="spinner"></span> Analyzing...</div></div>
+  <div id="rzContainer"></div>
+</div>
+
+</div>
 
 <script>
-const defaultStocks = [
-  { ticker: 'BDO', qty: 46, avg: 102.23, ltp: 115.00 },
-  { ticker: 'BPI', qty: 40, avg: 96.11, ltp: 88.35 },
-  { ticker: 'DMC', qty: 800, avg: 9.77, ltp: 9.19 },
-  { ticker: 'MER', qty: 2, avg: 590.71, ltp: 608.00 }
+var PSE=[
+  {ticker:'ALI',qty:20,avg:51.777,ltp:15.30,mktVal:306.00},
+  {ticker:'BDO',qty:46,avg:102.2291,ltp:114.90,mktVal:5285.40},
+  {ticker:'BPI',qty:40,avg:96.1065,ltp:89.95,mktVal:3598.00},
+  {ticker:'CEB',qty:10,avg:93.099,ltp:30.10,mktVal:301.00},
+  {ticker:'DITO',qty:175,avg:12.3806,ltp:0.82,mktVal:143.50},
+  {ticker:'DMC',qty:800,avg:9.7194,ltp:9.24,mktVal:7392.00},
+  {ticker:'MER',qty:2,avg:590.71,ltp:615.00,mktVal:1230.00},
+  {ticker:'NIKL',qty:100,avg:4.4744,ltp:4.86,mktVal:486.00},
+  {ticker:'PCOR',qty:300,avg:3.435,ltp:2.43,mktVal:729.00},
+  {ticker:'SMPH',qty:20,avg:22.666,ltp:18.96,mktVal:379.20}
 ];
+var CRYPTO=[
+  {ticker:'PAXG',name:'PAX Gold',holdings:'0.00956 PAXG',value:2658.10,change24h:-11.40,totalCost:3000.00,unrealized:-353.11,realized:0.00},
+  {ticker:'ETH',name:'Ethereum',holdings:'0.00811529 ETH',value:1066.75,change24h:-17.35,totalCost:1400.00,unrealized:-233.74,realized:-97.92},
+  {ticker:'BTC',name:'Bitcoin',holdings:'0.00016336 BTC',value:781.91,change24h:-17.16,totalCost:3559.91,unrealized:-169.57,realized:-2752.35}
+];
+var FUNDS=[
+  {ticker:'ATRAM-INFRA',name:'ATRAM Global Infra Equity Feeder Fund',provider:'ATRAM',value:1262.43,units:9.0906,navpu:138.8141,return1yr:24.60},
+  {ticker:'ATRAM-TECH',name:'ATRAM Global Technology Feeder Fund',provider:'ATRAM',value:785.11,units:1.5787,navpu:495.475845,return1yr:45.86}
+];
+var STOCK_META={
+  'ALI':{yield:1.2,risk:'Recovery',sector:'Property',fairValue:28.0,desc:'Ayala Land — blue chip property in recovery'},
+  'BDO':{yield:2.1,risk:'Defensive',sector:'Banking',fairValue:145.0,desc:'BDO Unibank — largest PH bank, stable dividends'},
+  'BPI':{yield:2.8,risk:'Defensive',sector:'Banking',fairValue:120.0,desc:'Bank of the Philippine Islands — solid dividend payer'},
+  'CEB':{yield:0.0,risk:'Cyclical',sector:'Aviation',fairValue:55.0,desc:'Cebu Air — airline, highly cyclical'},
+  'DITO':{yield:0.0,risk:'Speculative',sector:'Telecom',fairValue:5.0,desc:'DITO CME — new telco, high risk, no dividends'},
+  'DMC':{yield:3.5,risk:'Defensive',sector:'Conglomerate',fairValue:14.0,desc:'DMCI Holdings — consistent dividends'},
+  'MER':{yield:5.7,risk:'Defensive',sector:'Utilities',fairValue:420.0,desc:'Meralco — monopoly utility, highest yield'},
+  'NIKL':{yield:2.2,risk:'Cyclical',sector:'Mining',fairValue:6.5,desc:'Nickel Asia — commodity, cyclical'},
+  'PCOR':{yield:0.5,risk:'Speculative',sector:'Oil & Gas',fairValue:4.5,desc:'Petron Corp — high debt, speculative'},
+  'SMPH':{yield:1.8,risk:'Recovery',sector:'Property',fairValue:32.0,desc:'SM Prime Holdings — mall operator recovering'}
+};
+var ALL_TABS=['overview','analysis','briefer','charts','picks','dividends','snowball','riskzone'];
 
-function getStocks() {
-  const saved = localStorage.getItem('investmentDashboard');
+// ── HARD-CODED SAVED RESULTS ─────────────────────
+var SAVED_RESULTS={
+  health:'<div class="health-score-circle score-poor"><div class="health-score-num">42</div><div class="health-score-lbl">Poor</div></div><div class="health-grid"><div class="health-card"><div class="hc-label">RISK</div><div class="hc-val" style="color:#ffd54f">High</div></div><div class="health-card"><div class="hc-label">DIVERSIFICATION</div><div class="hc-val" style="color:#ffd54f">Fair</div></div><div class="health-card"><div class="hc-label">WIN/LOSS</div><div class="hc-val"><span class="pos">3</span>/<span class="neg">7</span></div></div><div class="health-card"><div class="hc-label">RECOVERY</div><div class="hc-val pos">+89%</div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><div style="background:#0a0e1a;border-radius:8px;padding:10px;"><div style="font-size:.68rem;color:#4caf50;margin-bottom:6px;">✅ STRENGTHS</div><div style="font-size:.72rem;color:#b0c4d8;margin-bottom:4px;">• Solid dividend anchors in BDO, BPI, MER, and NIKL provide income stability</div><div style="font-size:.72rem;color:#b0c4d8;margin-bottom:4px;">• GFunds position shows disciplined fixed-income allocation with strong 25-46% 1yr return</div><div style="font-size:.72rem;color:#b0c4d8;margin-bottom:4px;">• Multi-asset spread across equities, crypto, and GFunds reduces single-asset concentration risk</div></div><div style="background:#0a0e1a;border-radius:8px;padding:10px;"><div style="font-size:.68rem;color:#ef5350;margin-bottom:6px;">⚠️ WEAKNESSES</div><div style="font-size:.72rem;color:#b0c4d8;margin-bottom:4px;">• Severe unrealized losses in DITO(-93.4%), CEB(-67.7%), and ALI(-70.5%) indicate deep value traps</div><div style="font-size:.72rem;color:#b0c4d8;margin-bottom:4px;">• 7 of 10 holdings are in the red, dragging overall portfolio return significantly below PSE index</div><div style="font-size:.72rem;color:#b0c4d8;margin-bottom:4px;">• Crypto allocation adds speculative volatility to an already stressed equity portfolio</div><div style="font-size:.72rem;color:#b0c4d8;margin-bottom:4px;">• No clear stop-loss discipline evident; losers held through catastrophic drawdowns</div></div></div><div class="action-items"><div style="font-size:.68rem;color:#4fc3f7;margin-bottom:6px;">🎯 TOP ACTIONS</div><div class="action-item"><span style="color:#4fc3f7;font-weight:700;min-width:16px;">1.</span>Conduct fundamental reassessment of DITO, CEB, and ALI — if thesis is broken, cut losses and redeploy into performing blue chips</div><div class="action-item"><span style="color:#4fc3f7;font-weight:700;min-width:16px;">2.</span>Trim or exit PCOR and SMPH on any meaningful relief rally to reduce loss positions and free capital</div><div class="action-item"><span style="color:#4fc3f7;font-weight:700;min-width:16px;">3.</span>Increase GFunds allocation as a defensive base; consider adding to BDO or MER which show positive momentum</div></div>',
 
-  if (saved === null) {
-    return defaultStocks;
+  analysis:{
+    'ALI':{signal:'sell',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">52</div><div class="ti-signal neutral">Neutral</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bearish</div><div class="ti-signal bearish">Sell</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Below 50MA</div><div class="ti-signal bearish">Bearish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Middle Band</div><div class="ti-signal neutral">Neutral</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge sell">Sell</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val up-pred">⬆ UP</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">62%</div><div class="confidence-bar"><div class="confidence-fill" style="width:62%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val up-pred">₱15.80</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val up-pred">₱16.50</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱14.80</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱15.80</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Accumulation Base</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break above ₱15.80 with volume confirmation</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#ffd54f;">58/100</span></div>'},
+    'BDO':{signal:'buy',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">52</div><div class="ti-signal neutral">Neutral</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bearish</div><div class="ti-signal bearish">Sell</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Below 50MA</div><div class="ti-signal bearish">Bearish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Middle Band</div><div class="ti-signal neutral">Neutral</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge sell">Sell</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val down-pred">⬇ DOWN</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">62%</div><div class="confidence-bar"><div class="confidence-fill" style="width:62%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val down-pred">₱111.0</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val down-pred">₱106.0</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱110.0</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱118.0</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Bearish Consolidation</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break below ₱113.0 on volume</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#ffd54f;">55/100</span></div>'},
+    'BPI':{signal:'sell',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">52</div><div class="ti-signal neutral">Neutral</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bearish</div><div class="ti-signal bearish">Sell</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Below 50MA</div><div class="ti-signal bearish">Bearish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Middle Band</div><div class="ti-signal neutral">Neutral</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge sell">Sell</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val sideways-pred">↔ SIDEWAYS</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">62%</div><div class="confidence-bar"><div class="confidence-fill" style="width:62%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val sideways-pred">₱90.50</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val sideways-pred">₱93.00</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱87.50</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱92.00</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Consolidation</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break above ₱92.00 or below ₱87.50</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#ffd54f;">55/100</span></div>'},
+    'CEB':{signal:'sell',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">52</div><div class="ti-signal neutral">Neutral</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bearish</div><div class="ti-signal bearish">Sell</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Below 50MA</div><div class="ti-signal bearish">Bearish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Middle Band</div><div class="ti-signal neutral">Neutral</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge sell">Sell</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val down-pred">⬇ DOWN</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">62%</div><div class="confidence-bar"><div class="confidence-fill" style="width:62%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val down-pred">₱29.20</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val down-pred">₱27.50</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱28.80</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱31.50</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Descending Channel</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break below ₱29.80 on volume</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#ffd54f;">55/100</span></div>'},
+    'DITO':{signal:'sell',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">42</div><div class="ti-signal neutral">Neutral</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bearish</div><div class="ti-signal bearish">Sell</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Below 50MA</div><div class="ti-signal bearish">Bearish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Lower Band</div><div class="ti-signal oversold">Oversold</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge sell">Sell</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val down-pred">⬇ DOWN</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">62%</div><div class="confidence-bar"><div class="confidence-fill" style="width:62%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val down-pred">₱0.78</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val down-pred">₱0.72</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱0.75</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱0.88</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Descending Channel</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break below ₱0.80 on volume</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#ffd54f;">58/100</span></div>'},
+    'DMC':{signal:'hold',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">48</div><div class="ti-signal neutral">Neutral</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bearish</div><div class="ti-signal bearish">Sell</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Below 50MA</div><div class="ti-signal bearish">Bearish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Lower Band</div><div class="ti-signal oversold">Oversold</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge sell">Sell</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val up-pred">⬆ UP</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">62%</div><div class="confidence-bar"><div class="confidence-fill" style="width:62%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val up-pred">₱9.65</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val up-pred">₱10.20</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱8.90</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱9.80</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Accumulation Base</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break above ₱9.50 with volume surge</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#ffd54f;">58/100</span></div>'},
+    'MER':{signal:'buy',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val down-pred">⬇ DOWN</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">62%</div><div class="confidence-bar"><div class="confidence-fill" style="width:62%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val down-pred">₱598</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val down-pred">₱580</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱600</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱630</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Bearish Consolidation</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break below ₱600 support on volume</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#ef5350;">52/100</span></div>'},
+    'NIKL':{signal:'buy',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">42</div><div class="ti-signal neutral">Neutral</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bearish</div><div class="ti-signal bearish">Sell</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Below 50MA</div><div class="ti-signal bearish">Bearish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Lower Band</div><div class="ti-signal oversold">Oversold</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge sell">Sell</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val down-pred">⬇ DOWN</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">62%</div><div class="confidence-bar"><div class="confidence-fill" style="width:62%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val down-pred">₱4.65</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val down-pred">₱4.40</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱4.60</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱5.10</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Bearish Continuation</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break below ₱4.75 on volume</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#ffd54f;">58/100</span></div>'},
+    'PCOR':{signal:'sell',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">42</div><div class="ti-signal oversold">Oversold</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bearish</div><div class="ti-signal bearish">Sell</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Below 50MA</div><div class="ti-signal bearish">Bearish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Lower Band</div><div class="ti-signal oversold">Oversold</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge sell">Sell</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val down-pred">⬇ DOWN</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">62%</div><div class="confidence-bar"><div class="confidence-fill" style="width:62%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val down-pred">₱2.28</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val down-pred">₱2.10</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱2.20</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱2.55</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Descending Channel</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break below ₱2.35 on volume</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#ffd54f;">58/100</span></div>'},
+    'SMPH':{signal:'sell',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">42</div><div class="ti-signal neutral">Neutral</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bearish</div><div class="ti-signal bearish">Sell</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Below 50MA</div><div class="ti-signal bearish">Bearish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Lower Band</div><div class="ti-signal oversold">Oversold</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge sell">Sell</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val down-pred">⬇ DOWN</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">62%</div><div class="confidence-bar"><div class="confidence-fill" style="width:62%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val down-pred">₱18.20</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val down-pred">₱17.50</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱18.00</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱19.50</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Bearish Consolidation</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break below ₱18.50 with volume confirmation</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#ef5350;">52/100</span></div>'},
+    'PAXG':{signal:'hold',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">62</div><div class="ti-signal neutral">Neutral</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bullish</div><div class="ti-signal bullish">Buy</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Above 50MA</div><div class="ti-signal bullish">Bullish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Middle Band</div><div class="ti-signal neutral">Neutral</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge buy">Buy</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val up-pred">⬆ UP</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">68%</div><div class="confidence-bar"><div class="confidence-fill" style="width:68%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val up-pred">₱2,742</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val up-pred">₱2,891</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱2,589</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱2,731</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Ascending Triangle</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break above ₱2,731 with volume confirmation</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#4caf50;">65/100</span></div>'},
+    'ETH':{signal:'sell',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">42</div><div class="ti-signal oversold">Oversold</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bearish</div><div class="ti-signal bearish">Sell</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Below 50MA</div><div class="ti-signal bearish">Bearish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Lower Band</div><div class="ti-signal oversold">Oversold</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge sell">Sell</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val up-pred">⬆ UP</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">62%</div><div class="confidence-bar"><div class="confidence-fill" style="width:62%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val up-pred">₱1,185</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val up-pred">₱1,340</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱980</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱1,150</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Accumulation Base</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break above ₱1,150 with volume confirmation</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#ffd54f;">58/100</span></div>'},
+    'BTC':{signal:'sell',ti:'<div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div><div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val">62</div><div class="ti-signal neutral">Neutral</div></div><div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val">Bullish</div><div class="ti-signal bullish">Buy</div></div><div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val">Above 50MA</div><div class="ti-signal bullish">Bullish</div></div><div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val">Middle Band</div><div class="ti-signal neutral">Neutral</div></div></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge buy">Buy</span></div>',pred:'<div class="predict-header">🔮 PREDICTIVE ANALYSIS</div><div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val up-pred">⬆ UP</div></div><div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val">68%</div><div class="confidence-bar"><div class="confidence-fill" style="width:68%"></div></div></div><div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val up-pred">₱845</div></div><div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val up-pred">₱920</div></div><div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50">₱740</div></div><div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350">₱810</div></div></div><div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;">Accumulation Base</div></div><div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span>Break above ₱810 with volume confirmation</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;color:#4caf50;">65/100</span></div>'},
+    'ATRAM-INFRA':{signal:'hold',ai:'<span style="color:#b0c4d8">ATRAM Global Infra Equity Feeder Fund at ₱1,262.43 is trading near mid-range, reflecting steady but cautious sentiment in global infrastructure equities amid elevated interest rate environments. Infrastructure assets offer defensive characteristics and inflation linkage, supporting a HOLD stance while awaiting a pullback toward the buy zone for better risk-reward entry. Monitor Fed rate trajectory and USD/PHP movements, as currency fluctuations significantly impact feeder fund valuations.</span>',pt:'<div class="pt"><div class="pt-label">BUY ZONE</div><div class="pt-val" style="color:#4fc3f7">₱1,200–₱1,230</div></div><div class="pt"><div class="pt-label">TARGET</div><div class="pt-val" style="color:#4caf50">₱1,380</div></div><div class="pt"><div class="pt-label">STOP LOSS</div><div class="pt-val" style="color:#ef5350">₱1,150</div></div>',sc:'<div class="scenario"><div class="sc-label">🐂 BULL</div><div class="sc-val bull">+9.3%</div></div><div class="scenario"><div class="sc-label">📊 BASE</div><div class="sc-val base">4.5%</div></div><div class="scenario"><div class="sc-label">🐻 BEAR</div><div class="sc-val bear">-8.9%</div></div>'},
+    'ATRAM-TECH':{signal:'hold',ai:'<span style="color:#b0c4d8">ATRAM Global Technology Feeder Fund at ₱785.11 sits near mid-range after recent tech sector volatility, with global AI and semiconductor tailwinds providing a supportive medium-term backdrop. The current price is not deep enough in value territory to warrant an aggressive buy, making a HOLD appropriate while watching for a pullback into the ₱750–₱765 buy zone. Downside risk is tied to Fed rate trajectory and continued pressure on high-multiple tech valuations.</span>',pt:'<div class="pt"><div class="pt-label">BUY ZONE</div><div class="pt-val" style="color:#4fc3f7">₱750–₱765</div></div><div class="pt"><div class="pt-label">TARGET</div><div class="pt-val" style="color:#4caf50">₱850</div></div><div class="pt"><div class="pt-label">STOP LOSS</div><div class="pt-val" style="color:#ef5350">₱735</div></div>',sc:'<div class="scenario"><div class="sc-label">🐂 BULL</div><div class="sc-val bull">+12%</div></div><div class="scenario"><div class="sc-label">📊 BASE</div><div class="sc-val base">5%</div></div><div class="scenario"><div class="sc-label">🐻 BEAR</div><div class="sc-val bear">-8%</div></div>'}
   }
-
-  try {
-    return JSON.parse(saved);
-  } catch {
-    return defaultStocks;
-  }
+};
+async function saveToStorage(key,value){
+  try{await window.storage.set(key,JSON.stringify(value));}catch(e){console.log('Save error:'+e);}
 }
-
-function setStocks(stocks) {
-  localStorage.setItem('investmentDashboard', JSON.stringify(stocks));
+async function loadFromStorage(key){
+  try{var r=await window.storage.get(key);return r?JSON.parse(r.value):null;}catch(e){return null;}
 }
-
-function money(n) {
-  return '₱' + Number(n || 0).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+function saveDashboard(){
+  // Step 1: Capture all current AI result content from live DOM
+  var captured={};
+  var all=PSE.concat(CRYPTO).concat(FUNDS);
+  all.forEach(function(x){
+    var id=x.ticker;
+    var ai=document.getElementById('ai-'+id);
+    var pt=document.getElementById('pt-'+id);
+    var sc=document.getElementById('sc-'+id);
+    var badge=document.querySelector('#acard-'+id+' .card-header .badge');
+    var ti=document.getElementById('ti-'+id);
+    var pred=document.getElementById('pred-'+id);
+    var brief=document.getElementById('brief-'+id);
+    if(ai) captured['ai_'+id]=ai.innerHTML;
+    if(pt) captured['pt_'+id]=pt.innerHTML;
+    if(sc) captured['sc_'+id]=sc.innerHTML;
+    if(badge) captured['badge_'+id]=badge.outerHTML;
+    if(ti) captured['ti_'+id]=ti.outerHTML;
+    if(pred) captured['pred_'+id]=pred.outerHTML;
+    if(brief) captured['brief_'+id]=brief.innerHTML;
   });
+  var health=document.getElementById('healthContent');
+  var picks=document.getElementById('picksContainer');
+  var divC=document.getElementById('divContainer');
+  var divS=document.getElementById('divSummary');
+  var rzC=document.getElementById('rzContainer');
+  var sbR=document.getElementById('sb-results');
+  if(health) captured['health']=health.innerHTML;
+  if(picks) captured['picks']=picks.innerHTML;
+  if(divC) captured['divC']=divC.innerHTML;
+  if(divS) captured['divS']=divS.innerHTML;
+  if(rzC) captured['rzC']=rzC.innerHTML;
+  if(sbR) captured['sbR']=sbR.innerHTML;
+
+  // Step 2: Build restore script that injects captured content as static HTML
+  var restoreScript='<script id="snapshot-restore">(function(){'+
+    'var C='+JSON.stringify(captured)+';'+
+    'function restore(){'+
+      'var all='+JSON.stringify(all.map(function(x){return x.ticker;}))+';'+
+      'all.forEach(function(id){'+
+        'if(C["ai_"+id]&&document.getElementById("ai-"+id)) document.getElementById("ai-"+id).innerHTML=C["ai_"+id];'+
+        'if(C["pt_"+id]&&document.getElementById("pt-"+id)) document.getElementById("pt-"+id).innerHTML=C["pt_"+id];'+
+        'if(C["sc_"+id]&&document.getElementById("sc-"+id)) document.getElementById("sc-"+id).innerHTML=C["sc_"+id];'+
+        'if(C["ti_"+id]){var te=document.getElementById("ti-"+id);if(te){te.outerHTML=C["ti_"+id];}}'+
+        'if(C["pred_"+id]){var pe=document.getElementById("pred-"+id);if(pe){pe.outerHTML=C["pred_"+id];}}'+
+        'if(C["brief_"+id]&&document.getElementById("brief-"+id)) document.getElementById("brief-"+id).innerHTML=C["brief_"+id];'+
+        'if(C["badge_"+id]){var card=document.getElementById("acard-"+id);if(card){var b=card.querySelector(".card-header .badge");if(b){var tmp=document.createElement("span");tmp.innerHTML=C["badge_"+id];if(tmp.firstChild)b.replaceWith(tmp.firstChild);}}}'+
+      '});'+
+      'if(C.health&&document.getElementById("healthContent")) document.getElementById("healthContent").innerHTML=C.health;'+
+      'if(C.picks&&document.getElementById("picksContainer")) document.getElementById("picksContainer").innerHTML=C.picks;'+
+      'if(C.divC&&document.getElementById("divContainer")) document.getElementById("divContainer").innerHTML=C.divC;'+
+      'if(C.divS&&document.getElementById("divSummary")) document.getElementById("divSummary").innerHTML=C.divS;'+
+      'if(C.rzC&&document.getElementById("rzContainer")) document.getElementById("rzContainer").innerHTML=C.rzC;'+
+      'if(C.sbR&&document.getElementById("sb-results")) document.getElementById("sb-results").innerHTML=C.sbR;'+
+    '}'+
+    'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",function(){setTimeout(restore,400);});}'+
+    'else{setTimeout(restore,400);}'+
+  '})();<\/script>';
+
+  // Step 3: Get full page HTML and inject restore script
+  var html=document.documentElement.outerHTML;
+  // Remove any previous snapshot restore script
+  html=html.replace(/<script id="snapshot-restore">[\s\S]*?<\/script>/,'');
+  // Inject before closing body tag
+  html='<!DOCTYPE html>'+html.replace('</body>',restoreScript+'</body>');
+
+  // Show modal with full HTML
+  var modal=document.createElement('div');modal.id='saveModal';
+  modal.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  modal.addEventListener('click',function(e){if(e.target===modal)closeModal();});
+  modal.innerHTML='<div style="background:#0d1b2a;border:1px solid #1e3a5f;border-radius:12px;padding:20px;width:90%;max-width:600px;">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'+
+    '<div style="color:#4fc3f7;font-weight:700;">💾 Save Dashboard Snapshot</div>'+
+    '<button onclick="closeModal()" style="background:#1e3a5f;color:#fff;border:none;padding:4px 10px;border-radius:5px;cursor:pointer;">✕ Close</button></div>'+
+    '<div style="font-size:.75rem;color:#b0c4d8;margin-bottom:6px;">'+
+    '<b style="color:#fff">1.</b> Click box → <b style="color:#fff">2.</b> Ctrl+A → <b style="color:#fff">3.</b> Ctrl+C → <b style="color:#fff">4.</b> Open Notepad → <b style="color:#fff">5.</b> Ctrl+V → <b style="color:#fff">6.</b> Save as <b style="color:#4fc3f7">Investment-Dashboard.html</b> (All Files)</div>'+
+    '<div style="font-size:.7rem;color:#4caf50;margin-bottom:10px;">✅ All visible AI results are baked into this snapshot — they will show when opened in Chrome!</div>'+
+    '<textarea id="saveTA" style="width:100%;height:180px;background:#0a0e1a;color:#7fa8c9;border:1px solid #1e3a5f;border-radius:6px;padding:10px;font-size:.7rem;resize:none;"></textarea>'+
+    '<button onclick="var t=document.getElementById(\'saveTA\');t.select();document.execCommand(\'copy\');this.textContent=\'✅ Copied! Now paste in Notepad\';setTimeout(function(){this.textContent=\'📋 Select All & Copy\';}.bind(this),3000);" style="margin-top:10px;background:#1565c0;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:.78rem;width:100%;">📋 Select All & Copy</button>'+
+    '<button onclick="closeModal()" style="margin-top:8px;background:#1e3a5f;color:#b0c4d8;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:.78rem;width:100%;">✕ Close Window</button></div>';
+  document.body.appendChild(modal);
+  document.getElementById('saveTA').value=html;
+  document.addEventListener('keydown',escHandler);
 }
+function closeModal(){var m=document.getElementById('saveModal');if(m)m.remove();document.removeEventListener('keydown',escHandler);}
+function escHandler(e){if(e.key==='Escape')closeModal();}
 
-function renderStocks() {
-  const stocks = getStocks();
-  const rows = document.getElementById('stockRows');
-
-  rows.innerHTML = '';
-
-  let totalCost = 0;
-  let totalValue = 0;
-
-  stocks.forEach((s, i) => {
-    const cost = s.qty * s.avg;
-    const value = s.qty * s.ltp;
-    const pnl = value - cost;
-    const pnlPct = cost ? (pnl / cost) * 100 : 0;
-
-    totalCost += cost;
-    totalValue += value;
-
-    rows.innerHTML += `
-      <tr>
-        <td><b>${s.ticker}</b></td>
-        <td>${s.qty}</td>
-        <td>${money(s.avg)}</td>
-        <td>${money(s.ltp)}</td>
-        <td>${money(value)}</td>
-        <td class="${pnl >= 0 ? 'pos' : 'neg'}">${money(pnl)}</td>
-        <td class="${pnlPct >= 0 ? 'pos' : 'neg'}">${pnlPct.toFixed(2)}%</td>
-        <td>
-          <button class="btn-gray" onclick="editStock(${i})">Edit</button>
-          <button class="btn-red" onclick="deleteStock(${i})">Delete</button>
-        </td>
-      </tr>
-    `;
+async function clearAllStorage(){
+  if(!confirm('Clear all saved AI results? This cannot be undone.')) return;
+  var keys=['health','picks','divs','divsum','rz','sb'];
+  PSE.concat(CRYPTO).concat(FUNDS).forEach(function(x){
+    keys.push('analysis_'+x.ticker,'brief_'+x.ticker,'ti_'+x.ticker,'pred_'+x.ticker);
   });
-
-  const totalPnl = totalValue - totalCost;
-  const totalPnlPct = totalCost ? (totalPnl / totalCost) * 100 : 0;
-
-  document.getElementById('summary').innerHTML = `
-    <div class="summary-box">
-      <div class="label">Total Cost</div>
-      <div class="value">${money(totalCost)}</div>
-    </div>
-
-    <div class="summary-box">
-      <div class="label">Market Value</div>
-      <div class="value">${money(totalValue)}</div>
-    </div>
-
-    <div class="summary-box">
-      <div class="label">Total P/L</div>
-      <div class="value ${totalPnl >= 0 ? 'pos' : 'neg'}">
-        ${money(totalPnl)}
-      </div>
-    </div>
-
-    <div class="summary-box">
-      <div class="label">Total P/L %</div>
-      <div class="value ${totalPnlPct >= 0 ? 'pos' : 'neg'}">
-        ${totalPnlPct.toFixed(2)}%
-      </div>
-    </div>
-  `;
+  for(var i=0;i<keys.length;i++){try{await window.storage.delete(keys[i]);}catch(e){}}
+  location.reload();
+}
+function updateStorageStatus(msg){
+  var el=document.getElementById('storageStatus');
+  if(el){el.textContent='✅ Saved: '+msg;setTimeout(function(){el.textContent='⚡ Auto-save ON';},3000);}
 }
 
-function saveStock() {
-  const ticker = document.getElementById('ticker').value.trim().toUpperCase();
-  const qty = Number(document.getElementById('qty').value);
-  const avg = Number(document.getElementById('avg').value);
-  const ltp = Number(document.getElementById('ltp').value);
-  const editIndex = document.getElementById('editIndex').value;
-
-  if (!ticker || qty <= 0 || avg <= 0 || ltp <= 0) {
-    alert('Please complete all fields with valid values.');
-    return;
-  }
-
-  const stocks = getStocks();
-
-  const stock = {
-    ticker,
-    qty,
-    avg,
-    ltp
-  };
-
-  if (editIndex === '') {
-    stocks.push(stock);
-  } else {
-    stocks[Number(editIndex)] = stock;
-  }
-
-  setStocks(stocks);
-  clearForm();
-  renderStocks();
-}
-
-function editStock(index) {
-  const stock = getStocks()[index];
-
-  document.getElementById('formTitle').innerText = '✏️ Edit Stock';
-  document.getElementById('editIndex').value = index;
-
-  document.getElementById('ticker').value = stock.ticker;
-  document.getElementById('qty').value = stock.qty;
-  document.getElementById('avg').value = stock.avg;
-  document.getElementById('ltp').value = stock.ltp;
-}
-
-function deleteStock(index) {
-  if (!confirm('Delete this stock?')) return;
-
-  const stocks = getStocks();
-
-  stocks.splice(index, 1);
-  setStocks(stocks);
-  renderStocks();
-}
-
-function deleteAllStocks() {
-  if (!confirm('Delete all investments?')) return;
-
-  setStocks([]);
-  clearForm();
-  renderStocks();
-}
-
-function clearForm() {
-  document.getElementById('formTitle').innerText = '➕ Add Stock';
-
-  document.getElementById('editIndex').value = '';
-  document.getElementById('ticker').value = '';
-  document.getElementById('qty').value = '';
-  document.getElementById('avg').value = '';
-  document.getElementById('ltp').value = '';
-}
-
-async function analyzePortfolio() {
-  const stocks = getStocks();
-
-  if (stocks.length === 0) {
-    alert('Please add investments first.');
-    return;
-  }
-
-  const result = document.getElementById('aiResult');
-
-  result.innerHTML = 'Analyzing portfolio with ChatGPT...';
-
-  try {
-    const response = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        prompt: 'Analyze my investment portfolio and provide practical investment insights.',
-        portfolio: stocks
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.result) {
-      result.innerHTML = data.result.replace(/\n/g, '<br>');
-    } else if (data.reply) {
-      result.innerHTML = data.reply.replace(/\n/g, '<br>');
-    } else if (data.error) {
-      result.innerHTML = 'API Error: ' + data.error;
-    } else {
-      result.innerHTML = 'No AI response returned.';
+// ── RESTORE ALL SAVED DATA ────────────────────────
+async function restoreAllData(){
+  var statusEl=document.getElementById('storageStatus');
+  if(statusEl) statusEl.textContent='⏳ Restoring saved data...';
+  var restored=0;
+  // Health
+  var health=await loadFromStorage('health');
+  if(health&&document.getElementById('healthContent')){document.getElementById('healthContent').innerHTML=health;restored++;}
+  // Per-asset
+  var all=PSE.concat(CRYPTO).concat(FUNDS);
+  for(var i=0;i<all.length;i++){
+    var id=all[i].ticker;
+    var analysis=await loadFromStorage('analysis_'+id);
+    if(analysis){
+      if(analysis.ai&&document.getElementById('ai-'+id)) document.getElementById('ai-'+id).innerHTML=analysis.ai;
+      if(analysis.pt&&document.getElementById('pt-'+id)) document.getElementById('pt-'+id).innerHTML=analysis.pt;
+      if(analysis.sc&&document.getElementById('sc-'+id)) document.getElementById('sc-'+id).innerHTML=analysis.sc;
+      if(analysis.badge){var b=document.querySelector('#acard-'+id+' .card-header .badge');if(b){b.className=analysis.badge.cls;b.textContent=analysis.badge.txt;}}
+      if(analysis.abtn){var ab=document.getElementById('abtn-'+id);if(ab)ab.innerHTML=analysis.abtn;}
+      restored++;
     }
+    var brief=await loadFromStorage('brief_'+id);
+    if(brief&&document.getElementById('brief-'+id)){document.getElementById('brief-'+id).innerHTML=brief;restored++;}
+    var ti=await loadFromStorage('ti_'+id);
+    if(ti){var te=document.getElementById('ti-'+id);if(te){te.innerHTML=ti;te.style.display='block';restored++;}}
+    var pred=await loadFromStorage('pred_'+id);
+    if(pred){var pe=document.getElementById('pred-'+id);if(pe){pe.innerHTML=pred;pe.style.display='block';restored++;}}
+  }
+  // Picks
+  var picks=await loadFromStorage('picks');
+  if(picks&&document.getElementById('picksContainer')){document.getElementById('picksContainer').innerHTML=picks;restored++;}
+  // Dividends
+  var divs=await loadFromStorage('divs');
+  var divsum=await loadFromStorage('divsum');
+  if(divs&&document.getElementById('divContainer')){document.getElementById('divContainer').innerHTML=divs;restored++;}
+  if(divsum&&document.getElementById('divSummary')){document.getElementById('divSummary').innerHTML=divsum;restored++;}
+  // Risk Zone
+  var rz=await loadFromStorage('rz');
+  if(rz&&document.getElementById('rzContainer')){document.getElementById('rzContainer').innerHTML=rz;restored++;}
+  // Snowball
+  var sb=await loadFromStorage('sb');
+  if(sb&&document.getElementById('sb-results')){document.getElementById('sb-results').innerHTML=sb;restored++;}
 
-  } catch (error) {
-    console.error(error);
-    result.innerHTML = 'Error connecting to ChatGPT API.';
+  if(statusEl){
+    if(restored>0){
+      statusEl.textContent='✅ Restored '+restored+' saved results';
+      setTimeout(function(){statusEl.textContent='⚡ Auto-save ON';},4000);
+    } else {
+      statusEl.textContent='⚡ Auto-save ON';
+    }
   }
 }
 
-renderStocks();
-</script>
+function pnl(s){return (s.ltp-s.avg)*s.qty;}
+function pnlPct(s){return ((s.ltp-s.avg)/s.avg)*100;}
+function sig(pp){return pp>3?'buy':pp<-5?'sell':'hold';}
+function sigLbl(pp){return pp>3?'BUY':pp<-5?'SELL':'HOLD';}
+function riskStyle(r){return r==='Low'?'background:#0d3b1e;color:#4caf50;border:1px solid #2e7d32':r==='Medium'?'background:#1a2a0d;color:#ffd54f;border:1px solid #f57f17':'background:#3b0d0d;color:#ef5350;border:1px solid #b71c1c';}
 
+async function callAI(prompt,useSearch){
+  var res=await fetch('/api/analyze',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      prompt:prompt,
+      portfolio:{stocks:PSE,crypto:CRYPTO,funds:FUNDS}
+    })
+  });
+  var d=await res.json();
+  if(!res.ok || d.error) throw new Error(d.error||'OpenAI API error');
+  return d.reply || d.result || '';
+}
+function parseJSON(txt){var m=txt.replace(/```json|```/g,'').trim().match(/\{[\s\S]*\}/);return JSON.parse(m?m[0]:txt);}
+
+var DEFAULT_PSE=JSON.parse(JSON.stringify(PSE));
+var DEFAULT_CRYPTO=JSON.parse(JSON.stringify(CRYPTO));
+var DEFAULT_FUNDS=JSON.parse(JSON.stringify(FUNDS));
+
+function moneyFmt(n){
+  return '&#8369;'+Number(n||0).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function recalcPSE(){
+  PSE.forEach(function(s){
+    s.qty=Number(s.qty)||0;
+    s.avg=Number(s.avg)||0;
+    s.ltp=Number(s.ltp)||0;
+    s.mktVal=s.qty*s.ltp;
+  });
+}
+function loadPSEStocks(){
+  var saved=localStorage.getItem('investmentDashboardPSE');
+  if(saved!==null){
+    try{
+      var arr=JSON.parse(saved);
+      if(Array.isArray(arr)) PSE=arr;
+    }catch(e){}
+  }
+  recalcPSE();
+}
+function savePSEStocks(){
+  recalcPSE();
+  localStorage.setItem('investmentDashboardPSE',JSON.stringify(PSE));
+}
+function loadCryptoAssets(){
+  var saved=localStorage.getItem('investmentDashboardCrypto');
+  if(saved!==null){
+    try{var arr=JSON.parse(saved); if(Array.isArray(arr)) CRYPTO=arr;}catch(e){}
+  }
+}
+function saveCryptoAssets(){
+  localStorage.setItem('investmentDashboardCrypto',JSON.stringify(CRYPTO));
+}
+function loadFundAssets(){
+  var saved=localStorage.getItem('investmentDashboardFunds');
+  if(saved!==null){
+    try{var arr=JSON.parse(saved); if(Array.isArray(arr)) FUNDS=arr;}catch(e){}
+  }
+}
+function saveFundAssets(){
+  localStorage.setItem('investmentDashboardFunds',JSON.stringify(FUNDS));
+}
+function refreshDashboard(){
+  recalcPSE();
+  updatePortfolioTotals();
+  renderSummary();
+  renderTables();
+  renderAnalysisGrids();
+  renderBrieferGrids();
+  chartsRendered=false;
+  if(document.getElementById('tab-charts').classList.contains('active')) renderCharts();
+}
+function updatePortfolioTotals(){
+  var pseTotal=PSE.reduce(function(a,s){return a+(Number(s.mktVal)||0);},0);
+  var cryptoTotal=CRYPTO.reduce(function(a,c){return a+(Number(c.value)||0);},0);
+  var fundsTotal=FUNDS.reduce(function(a,f){return a+(Number(f.value)||0);},0);
+  var grand=pseTotal+cryptoTotal+fundsTotal;
+  var h=document.getElementById('headerTotalValue'); if(h) h.innerHTML=moneyFmt(grand);
+  var p=document.getElementById('pseTotalValue'); if(p) p.innerHTML=moneyFmt(pseTotal);
+  var c=document.getElementById('cryptoTotalValue'); if(c) c.innerHTML=moneyFmt(cryptoTotal);
+  var f=document.getElementById('fundsTotalValue'); if(f) f.innerHTML=moneyFmt(fundsTotal);
+}
+function savePSEStock(){
+  var ticker=document.getElementById('stockTicker').value.trim().toUpperCase();
+  var qty=Number(document.getElementById('stockQty').value);
+  var avg=Number(document.getElementById('stockAvg').value);
+  var ltp=Number(document.getElementById('stockLtp').value);
+  var editIndex=document.getElementById('editStockIndex').value;
+  if(!ticker || qty<=0 || avg<=0 || ltp<=0){
+    alert('Please complete ticker, quantity, average price, and latest price.');
+    return;
+  }
+  var item={ticker:ticker,qty:qty,avg:avg,ltp:ltp,mktVal:qty*ltp};
+  if(editIndex==='') PSE.push(item);
+  else PSE[Number(editIndex)]=item;
+  savePSEStocks();
+  clearPSEForm();
+  refreshDashboard();
+}
+function editPSEStock(i){
+  var s=PSE[i];
+  document.getElementById('portfolioEditorTitle').innerText='✏️ Edit PSE Stock';
+  document.getElementById('editStockIndex').value=i;
+  document.getElementById('stockTicker').value=s.ticker;
+  document.getElementById('stockQty').value=s.qty;
+  document.getElementById('stockAvg').value=s.avg;
+  document.getElementById('stockLtp').value=s.ltp;
+  document.getElementById('stockTicker').focus();
+}
+function deletePSEStock(i){
+  if(!confirm('Delete '+PSE[i].ticker+' from your dashboard?')) return;
+  PSE.splice(i,1);
+  savePSEStocks();
+  refreshDashboard();
+}
+function clearPSEForm(){
+  document.getElementById('portfolioEditorTitle').innerText='➕ Add / Edit PSE Stock';
+  document.getElementById('editStockIndex').value='';
+  document.getElementById('stockTicker').value='';
+  document.getElementById('stockQty').value='';
+  document.getElementById('stockAvg').value='';
+  document.getElementById('stockLtp').value='';
+}
+function resetPSEStocks(){
+  if(!confirm('Reset PSE stocks to the original hard-coded portfolio?')) return;
+  PSE=JSON.parse(JSON.stringify(DEFAULT_PSE));
+  savePSEStocks();
+  clearPSEForm();
+  refreshDashboard();
+}
+function saveCryptoAsset(){
+  var ticker=document.getElementById('cryptoTicker').value.trim().toUpperCase();
+  var name=document.getElementById('cryptoName').value.trim();
+  var holdings=document.getElementById('cryptoHoldings').value.trim();
+  var value=Number(document.getElementById('cryptoValue').value);
+  var change24h=Number(document.getElementById('cryptoChange').value);
+  var totalCost=Number(document.getElementById('cryptoCost').value);
+  var unrealized=Number(document.getElementById('cryptoUnrealized').value);
+  var realized=Number(document.getElementById('cryptoRealized').value);
+  var editIndex=document.getElementById('editCryptoIndex').value;
+  if(!ticker || !name || !holdings || value<0 || isNaN(value)){
+    alert('Please complete ticker, name, holdings, and current value.');
+    return;
+  }
+  var item={ticker:ticker,name:name,holdings:holdings,value:value,change24h:isNaN(change24h)?0:change24h,totalCost:isNaN(totalCost)?0:totalCost,unrealized:isNaN(unrealized)?0:unrealized,realized:isNaN(realized)?0:realized};
+  if(editIndex==='') CRYPTO.push(item);
+  else CRYPTO[Number(editIndex)]=item;
+  saveCryptoAssets();
+  clearCryptoForm();
+  refreshDashboard();
+}
+function editCryptoAsset(i){
+  var c=CRYPTO[i];
+  document.getElementById('cryptoEditorTitle').innerText='✏️ Edit Crypto';
+  document.getElementById('editCryptoIndex').value=i;
+  document.getElementById('cryptoTicker').value=c.ticker||'';
+  document.getElementById('cryptoName').value=c.name||'';
+  document.getElementById('cryptoHoldings').value=c.holdings||'';
+  document.getElementById('cryptoValue').value=c.value||0;
+  document.getElementById('cryptoChange').value=c.change24h||0;
+  document.getElementById('cryptoCost').value=c.totalCost||0;
+  document.getElementById('cryptoUnrealized').value=c.unrealized||0;
+  document.getElementById('cryptoRealized').value=c.realized||0;
+  document.getElementById('cryptoTicker').focus();
+}
+function deleteCryptoAsset(i){
+  if(!confirm('Delete '+(CRYPTO[i].ticker||CRYPTO[i].name)+' from your dashboard?')) return;
+  CRYPTO.splice(i,1);
+  saveCryptoAssets();
+  refreshDashboard();
+}
+function clearCryptoForm(){
+  document.getElementById('cryptoEditorTitle').innerText='➕ Add / Edit Crypto';
+  document.getElementById('editCryptoIndex').value='';
+  ['cryptoTicker','cryptoName','cryptoHoldings','cryptoValue','cryptoChange','cryptoCost','cryptoUnrealized','cryptoRealized'].forEach(function(id){document.getElementById(id).value='';});
+}
+function resetCryptoAssets(){
+  if(!confirm('Reset crypto assets to the original hard-coded portfolio?')) return;
+  CRYPTO=JSON.parse(JSON.stringify(DEFAULT_CRYPTO));
+  saveCryptoAssets();
+  clearCryptoForm();
+  refreshDashboard();
+}
+function saveFundAsset(){
+  var ticker=document.getElementById('fundTicker').value.trim().toUpperCase();
+  var name=document.getElementById('fundName').value.trim();
+  var provider=document.getElementById('fundProvider').value.trim();
+  var value=Number(document.getElementById('fundValue').value);
+  var units=Number(document.getElementById('fundUnits').value);
+  var navpu=Number(document.getElementById('fundNavpu').value);
+  var return1yr=Number(document.getElementById('fundReturn').value);
+  var editIndex=document.getElementById('editFundIndex').value;
+  if(!ticker || !name || !provider || value<0 || isNaN(value)){
+    alert('Please complete ticker/code, fund name, provider, and current value.');
+    return;
+  }
+  var item={ticker:ticker,name:name,provider:provider,value:value,units:isNaN(units)?0:units,navpu:isNaN(navpu)?0:navpu,return1yr:isNaN(return1yr)?0:return1yr};
+  if(editIndex==='') FUNDS.push(item);
+  else FUNDS[Number(editIndex)]=item;
+  saveFundAssets();
+  clearFundForm();
+  refreshDashboard();
+}
+function editFundAsset(i){
+  var f=FUNDS[i];
+  document.getElementById('fundEditorTitle').innerText='✏️ Edit GFund';
+  document.getElementById('editFundIndex').value=i;
+  document.getElementById('fundTicker').value=f.ticker||'';
+  document.getElementById('fundName').value=f.name||'';
+  document.getElementById('fundProvider').value=f.provider||'';
+  document.getElementById('fundValue').value=f.value||0;
+  document.getElementById('fundUnits').value=f.units||0;
+  document.getElementById('fundNavpu').value=f.navpu||0;
+  document.getElementById('fundReturn').value=f.return1yr||0;
+  document.getElementById('fundTicker').focus();
+}
+function deleteFundAsset(i){
+  if(!confirm('Delete '+(FUNDS[i].ticker||FUNDS[i].name)+' from your dashboard?')) return;
+  FUNDS.splice(i,1);
+  saveFundAssets();
+  refreshDashboard();
+}
+function clearFundForm(){
+  document.getElementById('fundEditorTitle').innerText='➕ Add / Edit GFund';
+  document.getElementById('editFundIndex').value='';
+  ['fundTicker','fundName','fundProvider','fundValue','fundUnits','fundNavpu','fundReturn'].forEach(function(id){document.getElementById(id).value='';});
+}
+function resetFundAssets(){
+  if(!confirm('Reset GFunds to the original hard-coded portfolio?')) return;
+  FUNDS=JSON.parse(JSON.stringify(DEFAULT_FUNDS));
+  saveFundAssets();
+  clearFundForm();
+  refreshDashboard();
+}
+function renderSummary(){
+  var tc=PSE.reduce(function(a,s){return a+s.avg*s.qty;},0);
+  var tp=PSE.reduce(function(a,s){return a+pnl(s);},0);
+  var cc=CRYPTO.reduce(function(a,c){return a+c.value*(c.change24h/100);},0);
+  document.getElementById('summaryCards').innerHTML=
+    '<div class="sc"><div class="sl">TOTAL PORTFOLIO</div><div class="sv">'+moneyFmt(PSE.reduce(function(a,s){return a+s.mktVal;},0)+CRYPTO.reduce(function(a,c){return a+c.value;},0)+FUNDS.reduce(function(a,f){return a+f.value;},0))+'</div></div>'+
+    '<div class="sc"><div class="sl">PSE P&L</div><div class="sv '+(tp>=0?'pos':'neg')+'">'+(tp>=0?'+':'')+'&#8369;'+tp.toFixed(2)+'</div></div>'+
+    '<div class="sc"><div class="sl">PSE RETURN</div><div class="sv '+(tp>=0?'pos':'neg')+'">'+((tp/tc)*100).toFixed(2)+'%</div></div>'+
+    '<div class="sc"><div class="sl">CRYPTO 24H</div><div class="sv '+(cc>=0?'pos':'neg')+'">'+(cc>=0?'+':'')+'&#8369;'+cc.toFixed(2)+'</div></div>'+
+    '<div class="sc"><div class="sl">WINNERS/LOSERS</div><div class="sv"><span class="pos">'+PSE.filter(function(s){return pnl(s)>0;}).length+'</span>/<span class="neg">'+PSE.filter(function(s){return pnl(s)<0;}).length+'</span></div></div>'+
+    '<div class="sc"><div class="sl">TOTAL ASSETS</div><div class="sv">'+(PSE.length+CRYPTO.length+FUNDS.length)+'</div></div>';
+}
+function renderTables(){
+  document.getElementById('pseBody').innerHTML=PSE.map(function(s,i){
+    var p=pnl(s),pp=pnlPct(s);
+    return '<tr><td>'+s.ticker+'</td><td>'+s.qty+'</td><td>&#8369;'+s.avg.toFixed(4)+'</td><td>&#8369;'+s.ltp.toFixed(4)+'</td><td>&#8369;'+s.mktVal.toLocaleString('en',{minimumFractionDigits:2})+'</td><td class="'+(p>=0?'pos':'neg')+'">'+(p>=0?'+':'')+'&#8369;'+p.toFixed(2)+'</td><td class="'+(pp>=0?'pos':'neg')+'">'+(pp>=0?'+':'')+pp.toFixed(2)+'%</td><td><span class="badge '+sig(pp)+'">'+sigLbl(pp)+'</span></td><td><button class="action-btn action-edit" onclick="editPSEStock('+i+')">Edit</button><button class="action-btn action-delete" onclick="deletePSEStock('+i+')">Delete</button></td></tr>';
+  }).join('');
+  document.getElementById('cryptoBody').innerHTML=CRYPTO.map(function(c,i){
+    var ch=Number(c.change24h)||0, unreal=Number(c.unrealized)||0, real=Number(c.realized)||0;
+    var s=ch>=0?'buy':ch>-15?'hold':'sell';
+    return '<tr><td>'+c.name+'</td><td style="color:#b0c4d8">'+c.holdings+'</td><td>&#8369;'+(Number(c.value)||0).toLocaleString('en',{minimumFractionDigits:2})+'</td><td class="'+(ch>=0?'pos':'neg')+'">'+(ch>=0?'+':'')+ch.toFixed(2)+'%</td><td class="'+(unreal>=0?'pos':'neg')+'">'+(unreal>=0?'+':'')+'&#8369;'+unreal.toFixed(2)+'</td><td class="'+(real>=0?'pos':'neg')+'">'+(real>=0?'+':'')+'&#8369;'+real.toFixed(2)+'</td><td><span class="badge '+s+'">'+s.toUpperCase()+'</span></td><td><button class="action-btn action-edit" onclick="editCryptoAsset('+i+')">Edit</button><button class="action-btn action-delete" onclick="deleteCryptoAsset('+i+')">Delete</button></td></tr>';
+  }).join('');
+  document.getElementById('fundsBody').innerHTML=FUNDS.map(function(f,i){
+    var ret=Number(f.return1yr)||0;
+    return '<tr><td>'+f.name+'</td><td style="color:#b0c4d8">'+f.provider+'</td><td>&#8369;'+(Number(f.value)||0).toLocaleString('en',{minimumFractionDigits:2})+'</td><td style="color:#b0c4d8">'+(Number(f.units)||0)+'</td><td style="color:#b0c4d8">&#8369;'+(Number(f.navpu)||0).toFixed(4)+'</td><td class="'+(ret>=0?'pos':'neg')+'">'+(ret>=0?'+':'')+ret.toFixed(2)+'%</td><td><span class="badge hold">HOLD</span></td><td><button class="action-btn action-edit" onclick="editFundAsset('+i+')">Edit</button><button class="action-btn action-delete" onclick="deleteFundAsset('+i+')">Delete</button></td></tr>';
+  }).join('');
+}
+
+function makeCard(id,ticker,name,pp,badge,ltp,avg,extraMeta){
+  return '<div class="stock-card" id="acard-'+id+'"><div class="card-header"><div><div class="card-ticker">'+ticker+'</div>'+(name?'<div class="card-sub">'+name+'</div>':'')+
+    '</div><span class="badge '+badge+'">'+badge.toUpperCase()+'</span></div><div class="card-body">'+
+    '<div style="display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:7px;flex-wrap:wrap;gap:4px;">'+
+    (ltp!==null?'<span style="color:#7fa8c9">LTP:<b style="color:#fff">&#8369;'+ltp+'</b></span>':'')+
+    (avg!==null?'<span style="color:#7fa8c9">Avg:<b style="color:#fff">&#8369;'+avg+'</b></span>':'')+
+    (extraMeta||'')+(pp!==null?'<span class="'+(pp>=0?'pos':'neg')+'">'+(pp>=0?'+':'')+pp.toFixed(1)+'%</span>':'')+
+    '</div><div style="font-size:.68rem;color:#7fa8c9;margin-bottom:3px;">PRICE TARGETS</div>'+
+    '<div class="price-targets" id="pt-'+id+'"><div class="pt"><div class="pt-label">BUY ZONE</div><div class="pt-val" style="color:#4fc3f7">—</div></div><div class="pt"><div class="pt-label">TARGET</div><div class="pt-val" style="color:#4caf50">—</div></div><div class="pt"><div class="pt-label">STOP LOSS</div><div class="pt-val" style="color:#ef5350">—</div></div></div>'+
+    '<div style="font-size:.68rem;color:#7fa8c9;margin:7px 0 3px;">SCENARIOS</div>'+
+    '<div class="scenarios" id="sc-'+id+'"><div class="scenario"><div class="sc-label">🐂 BULL</div><div class="sc-val bull">—</div></div><div class="scenario"><div class="sc-label">📊 BASE</div><div class="sc-val base">—</div></div><div class="scenario"><div class="sc-label">🐻 BEAR</div><div class="sc-val bear">—</div></div></div>'+
+    '<div class="briefer-box" id="ai-'+id+'"><span style="color:#4a6080;font-size:.7rem;font-style:italic;">Click Analyze to load AI insights...</span></div>'+
+    '<div class="ti-wrap" id="ti-'+id+'" style="display:none;"><div style="font-size:.68rem;color:#7fa8c9;margin-bottom:6px;">📊 TECHNICALS</div>'+
+    '<div class="ti-row"><div class="ti-item"><div class="ti-label">RSI</div><div class="ti-val" id="ti-rsi-'+id+'">—</div><div class="ti-signal" id="ti-rsi-sig-'+id+'">—</div></div>'+
+    '<div class="ti-item"><div class="ti-label">MACD</div><div class="ti-val" id="ti-macd-'+id+'">—</div><div class="ti-signal" id="ti-macd-sig-'+id+'">—</div></div>'+
+    '<div class="ti-item"><div class="ti-label">MA Signal</div><div class="ti-val" id="ti-ma-'+id+'">—</div><div class="ti-signal" id="ti-ma-sig-'+id+'">—</div></div>'+
+    '<div class="ti-item"><div class="ti-label">Bollinger</div><div class="ti-val" id="ti-bb-'+id+'">—</div><div class="ti-signal" id="ti-bb-sig-'+id+'">—</div></div></div>'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;"><span style="font-size:.68rem;color:#7fa8c9;">Overall:</span><span class="badge" id="ti-overall-'+id+'">—</span></div></div>'+
+    '<div class="predict-wrap" id="pred-'+id+'" style="display:none;"><div class="predict-header">🔮 PREDICTIVE ANALYSIS</div>'+
+    '<div class="predict-grid"><div class="predict-item"><div class="predict-label">NEXT MOVE</div><div class="predict-val" id="pred-move-'+id+'">—</div></div>'+
+    '<div class="predict-item"><div class="predict-label">PROBABILITY</div><div class="predict-val" id="pred-prob-'+id+'">—</div><div class="confidence-bar"><div class="confidence-fill" id="pred-bar-'+id+'" style="width:0%"></div></div></div>'+
+    '<div class="predict-item"><div class="predict-label">7-DAY</div><div class="predict-val" id="pred-7d-'+id+'">—</div></div>'+
+    '<div class="predict-item"><div class="predict-label">30-DAY</div><div class="predict-val" id="pred-30d-'+id+'">—</div></div>'+
+    '<div class="predict-item"><div class="predict-label">SUPPORT</div><div class="predict-val" style="color:#4caf50" id="pred-sup-'+id+'">—</div></div>'+
+    '<div class="predict-item"><div class="predict-label">RESISTANCE</div><div class="predict-val" style="color:#ef5350" id="pred-res-'+id+'">—</div></div></div>'+
+    '<div class="predict-pattern"><div style="font-size:.62rem;color:#ce93d8;margin-bottom:3px;">📐 PATTERN</div><div style="font-size:.78rem;font-weight:700;color:#fff;" id="pred-pattern-'+id+'">—</div></div>'+
+    '<div class="predict-trigger"><span style="font-size:.62rem;color:#ffd54f;font-weight:700;">⚡ TRIGGER: </span><span id="pred-trigger-'+id+'">—</span></div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;"><span style="font-size:.62rem;color:#7fa8c9;">Confidence:</span><span style="font-size:.78rem;font-weight:700;" id="pred-conf-'+id+'">—</span></div></div>'+
+    '<div class="card-actions"><button class="btn-sm btn-blue" onclick="analyzeOne(\''+id+'\')" id="abtn-'+id+'">🤖 Analyze</button>'+
+    '<button class="btn-sm" style="background:#0d47a1;color:#fff;" onclick="getTechnicalIndicators(\''+id+'\')" id="tibtn-'+id+'">📊 Technicals</button>'+
+    '<button class="btn-sm" style="background:#4a148c;color:#fff;" onclick="getPrediction(\''+id+'\')" id="predbtn-'+id+'">🔮 Predict</button>'+
+    '</div></div></div>';
+}
+function makeBrieferCard(id,ticker,name){
+  return '<div class="stock-card"><div class="card-header"><div><div class="card-ticker">'+ticker+'</div>'+(name?'<div class="card-sub">'+name+'</div>':'')+
+    '</div><button class="btn-sm btn-purple" onclick="researchOne(\''+id+'\')" id="rbtn-'+id+'">🔍 Research</button></div>'+
+    '<div class="card-body"><div class="briefer-box" id="brief-'+id+'"><span style="color:#4a6080;font-size:.7rem;font-style:italic;">Click Research for latest news...</span></div></div></div>';
+}
+function renderAnalysisGrids(){
+  document.getElementById('pseAnalysisGrid').innerHTML=PSE.map(function(s){return makeCard(s.ticker,s.ticker,'',pnlPct(s),sig(pnlPct(s)),s.ltp.toFixed(4),s.avg.toFixed(2),'');}).join('');
+  document.getElementById('cryptoAnalysisGrid').innerHTML=CRYPTO.map(function(c){return makeCard(c.ticker,c.ticker,c.name,c.change24h,c.change24h>=0?'buy':c.change24h>-15?'hold':'sell',null,null,'<span style="color:#7fa8c9">24h:<b class="'+(c.change24h>=0?'pos':'neg')+'">'+c.change24h+'%</b></span>');}).join('');
+  document.getElementById('fundsAnalysisGrid').innerHTML=FUNDS.map(function(f){return makeCard(f.ticker,f.provider,f.name,null,'hold',null,null,'<span style="color:#7fa8c9">Val:<b style="color:#fff">&#8369;'+f.value.toLocaleString()+'</b></span>');}).join('');
+}
+function renderBrieferGrids(){
+  document.getElementById('pseBrieferGrid').innerHTML=PSE.map(function(s){return makeBrieferCard(s.ticker,s.ticker,'');}).join('');
+  document.getElementById('cryptoBrieferGrid').innerHTML=CRYPTO.map(function(c){return makeBrieferCard(c.ticker,c.ticker,c.name);}).join('');
+  document.getElementById('fundsBrieferGrid').innerHTML=FUNDS.map(function(f){return makeBrieferCard(f.ticker,f.provider,f.name);}).join('');
+}
+
+async function analyzeOne(id){
+  var aiEl=document.getElementById('ai-'+id),ptEl=document.getElementById('pt-'+id),scEl=document.getElementById('sc-'+id),btn=document.getElementById('abtn-'+id);
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';}
+  aiEl.innerHTML='<div class="loading"><span class="spinner"></span> Analyzing '+id+'...</div>';
+  var s=PSE.find(function(x){return x.ticker===id;}),c=CRYPTO.find(function(x){return x.ticker===id;}),f=FUNDS.find(function(x){return x.ticker===id;});
+  var desc='',extra='';
+  if(s){desc=s.ticker+' PSE stock';extra='LTP:&#8369;'+s.ltp+',Avg:&#8369;'+s.avg.toFixed(2)+',P&L:'+pnlPct(s).toFixed(2)+'%';}
+  else if(c){desc=c.name+' crypto';extra='Value:&#8369;'+c.value+',24h:'+c.change24h+'%';}
+  else if(f){desc=f.name;extra='Value:&#8369;'+f.value;}
+  try{
+    var txt=await callAI('Analyze '+desc+'. '+extra+'\nONLY valid JSON:\n{"signal":"BUY|HOLD|SELL","buyZone":"&#8369;X","target":"&#8369;X","stopLoss":"&#8369;X","bull":"+X%","base":"X%","bear":"-X%","summary":"2-3 sentences."}',false);
+    var d=parseJSON(txt);
+    if(ptEl) ptEl.innerHTML='<div class="pt"><div class="pt-label">BUY ZONE</div><div class="pt-val" style="color:#4fc3f7">'+d.buyZone+'</div></div><div class="pt"><div class="pt-label">TARGET</div><div class="pt-val" style="color:#4caf50">'+d.target+'</div></div><div class="pt"><div class="pt-label">STOP LOSS</div><div class="pt-val" style="color:#ef5350">'+d.stopLoss+'</div></div>';
+    if(scEl) scEl.innerHTML='<div class="scenario"><div class="sc-label">🐂 BULL</div><div class="sc-val bull">'+d.bull+'</div></div><div class="scenario"><div class="sc-label">📊 BASE</div><div class="sc-val base">'+d.base+'</div></div><div class="scenario"><div class="sc-label">🐻 BEAR</div><div class="sc-val bear">'+d.bear+'</div></div>';
+    aiEl.innerHTML='<span style="color:#b0c4d8">'+d.summary+'</span>';
+    var card=document.getElementById('acard-'+id);
+    if(card){var b=card.querySelector('.card-header .badge');if(b){b.className='badge '+d.signal.toLowerCase();b.textContent=d.signal;}}
+    // AUTO-SAVE
+    await saveToStorage('analysis_'+id,{
+      ai:aiEl.innerHTML,pt:ptEl?ptEl.innerHTML:'',sc:scEl?scEl.innerHTML:'',
+      badge:card&&card.querySelector('.card-header .badge')?{cls:card.querySelector('.card-header .badge').className,txt:card.querySelector('.card-header .badge').textContent}:null,
+      abtn:'🤖 Re-analyze'
+    });
+    updateStorageStatus(id+' analysis');
+  }catch(e){aiEl.innerHTML='<span style="color:#ef5350">Error:'+e.message+'</span>';}
+  if(btn){btn.disabled=false;btn.innerHTML='🤖 Re-analyze';}
+}
+async function analyzeAll(){
+  var btn=document.getElementById('analyzeAllBtn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Analyzing...';
+  for(var i=0;i<PSE.length;i++) await analyzeOne(PSE[i].ticker);
+  for(var i=0;i<CRYPTO.length;i++) await analyzeOne(CRYPTO[i].ticker);
+  for(var i=0;i<FUNDS.length;i++) await analyzeOne(FUNDS[i].ticker);
+  btn.disabled=false;btn.innerHTML='🤖 Analyze All Assets';
+}
+
+async function getTechnicalIndicators(id){
+  var btn=document.getElementById('tibtn-'+id),tiWrap=document.getElementById('ti-'+id);
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';}
+  tiWrap.style.display='block';
+  var s=PSE.find(function(x){return x.ticker===id;}),c=CRYPTO.find(function(x){return x.ticker===id;}),f=FUNDS.find(function(x){return x.ticker===id;});
+  var desc=s?s.ticker+' PSE LTP:&#8369;'+s.ltp:c?c.name+' value:&#8369;'+c.value:f?f.name:'';
+  try{
+    var txt=await callAI('Technical analysis for '+desc+'.\nONLY valid JSON:\n{"rsi":{"value":"XX","signal":"Overbought|Neutral|Oversold"},"macd":{"value":"Bullish|Bearish","signal":"Buy|Sell"},"ma":{"value":"Above 50MA|Below 50MA","signal":"Bullish|Bearish"},"bb":{"value":"Upper Band|Middle Band|Lower Band","signal":"Overbought|Neutral|Oversold"},"overall":"Strong Buy|Buy|Hold|Sell|Strong Sell"}',false);
+    var d=parseJSON(txt);
+    document.getElementById('ti-rsi-'+id).textContent=d.rsi.value;
+    var rs=document.getElementById('ti-rsi-sig-'+id);rs.textContent=d.rsi.signal;rs.className='ti-signal '+(d.rsi.signal==='Overbought'?'overbought':d.rsi.signal==='Oversold'?'oversold':'neutral');
+    document.getElementById('ti-macd-'+id).textContent=d.macd.value;
+    var ms=document.getElementById('ti-macd-sig-'+id);ms.textContent=d.macd.signal;ms.className='ti-signal '+(d.macd.signal==='Buy'?'bullish':'bearish');
+    document.getElementById('ti-ma-'+id).textContent=d.ma.value;
+    var mas=document.getElementById('ti-ma-sig-'+id);mas.textContent=d.ma.signal;mas.className='ti-signal '+(d.ma.signal==='Bullish'?'bullish':'bearish');
+    document.getElementById('ti-bb-'+id).textContent=d.bb.value;
+    var bs=document.getElementById('ti-bb-sig-'+id);bs.textContent=d.bb.signal;bs.className='ti-signal '+(d.bb.signal==='Oversold'?'oversold':d.bb.signal==='Overbought'?'overbought':'neutral');
+    var ov=document.getElementById('ti-overall-'+id);ov.className='badge '+(d.overall==='Strong Buy'?'strong-buy':d.overall==='Buy'?'buy':d.overall==='Sell'?'sell':d.overall==='Strong Sell'?'strong-sell':'hold');ov.textContent=d.overall;
+    // AUTO-SAVE
+    await saveToStorage('ti_'+id,tiWrap.innerHTML);
+    updateStorageStatus(id+' technicals');
+  }catch(e){document.getElementById('ti-rsi-'+id).textContent='Error';}
+  if(btn){btn.disabled=false;btn.innerHTML='📊 Refresh';}
+}
+
+async function getPrediction(id){
+  var btn=document.getElementById('predbtn-'+id),wrap=document.getElementById('pred-'+id);
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';}
+  wrap.style.display='block';
+  var s=PSE.find(function(x){return x.ticker===id;}),c=CRYPTO.find(function(x){return x.ticker===id;}),f=FUNDS.find(function(x){return x.ticker===id;});
+  var desc=s?s.ticker+' PSE LTP:&#8369;'+s.ltp:c?c.name+' value:&#8369;'+c.value:f?f.name:'';
+  try{
+    var txt=await callAI('Predictive analysis for '+desc+'.\nONLY valid JSON:\n{"nextMove":"Up|Down|Sideways","probability":75,"target7d":"&#8369;X","target30d":"&#8369;X","support":"&#8369;X","resistance":"&#8369;X","pattern":"name","trigger":"confirmation","confidence":70}',false);
+    var d=parseJSON(txt);
+    var mv=document.getElementById('pred-move-'+id);mv.textContent=d.nextMove==='Up'?'⬆ UP':d.nextMove==='Down'?'⬇ DOWN':'↔ SIDEWAYS';mv.className='predict-val '+(d.nextMove==='Up'?'up-pred':d.nextMove==='Down'?'down-pred':'sideways-pred');
+    document.getElementById('pred-prob-'+id).textContent=d.probability+'%';
+    var bar=document.getElementById('pred-bar-'+id);if(bar)bar.style.width=d.probability+'%';
+    var t7=document.getElementById('pred-7d-'+id);t7.textContent=d.target7d;t7.className='predict-val '+(d.nextMove==='Up'?'up-pred':d.nextMove==='Down'?'down-pred':'sideways-pred');
+    var t30=document.getElementById('pred-30d-'+id);t30.textContent=d.target30d;t30.className='predict-val '+(d.nextMove==='Up'?'up-pred':d.nextMove==='Down'?'down-pred':'sideways-pred');
+    document.getElementById('pred-sup-'+id).textContent=d.support;document.getElementById('pred-res-'+id).textContent=d.resistance;
+    document.getElementById('pred-pattern-'+id).textContent=d.pattern;document.getElementById('pred-trigger-'+id).textContent=d.trigger;
+    var ce=document.getElementById('pred-conf-'+id);ce.textContent=d.confidence+'/100';ce.style.color=d.confidence>=70?'#4caf50':d.confidence>=50?'#ffd54f':'#ef5350';
+    // AUTO-SAVE
+    await saveToStorage('pred_'+id,wrap.innerHTML);
+    updateStorageStatus(id+' prediction');
+  }catch(e){document.getElementById('pred-move-'+id).textContent='Error:'+e.message;}
+  if(btn){btn.disabled=false;btn.innerHTML='🔮 Re-predict';}
+}
+
+async function generateHealthScore(){
+  var btn=document.getElementById('healthBtn'),content=document.getElementById('healthContent');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  content.innerHTML='<div class="loading" style="justify-content:center;padding:20px;"><span class="spinner"></span> Calculating...</div>';
+  var pseTot=PSE.reduce(function(a,s){return a+s.mktVal;},0),cryptoTot=CRYPTO.reduce(function(a,c){return a+c.value;},0),fundsTot=FUNDS.reduce(function(a,f){return a+f.value;},0),totalVal=pseTot+cryptoTot+fundsTot;
+  var winners=PSE.filter(function(s){return pnl(s)>0;}).length,losers=PSE.filter(function(s){return pnl(s)<0;}).length;
+  try{
+    var txt=await callAI('Portfolio health. PSE:&#8369;'+pseTot.toFixed(0)+','+winners+' winners,'+losers+' losers. Holdings:'+PSE.map(function(s){return s.ticker+'('+pnlPct(s).toFixed(1)+'%)';}).join(',')+'. Crypto:&#8369;'+cryptoTot.toFixed(0)+'. GFunds:&#8369;'+fundsTot.toFixed(0)+' +25-46% 1yr.\nONLY valid JSON:\n{"score":75,"grade":"Fair","riskLevel":"Moderate","diversification":"Good|Fair|Poor","winLossRatio":"X/Y","recoveryPotential":"+X%","strengths":["s1","s2"],"weaknesses":["w1","w2"],"actions":["a1","a2","a3"]}',false);
+    var d=parseJSON(txt),sc=d.score>=80?'score-excellent':d.score>=60?'score-good':d.score>=40?'score-fair':'score-poor',wl=d.winLossRatio.split('/');
+    content.innerHTML='<div class="health-score-circle '+sc+'"><div class="health-score-num">'+d.score+'</div><div class="health-score-lbl">'+d.grade+'</div></div>'+
+      '<div class="health-grid"><div class="health-card"><div class="hc-label">RISK</div><div class="hc-val" style="color:#ffd54f">'+d.riskLevel+'</div></div>'+
+      '<div class="health-card"><div class="hc-label">DIVERSIFICATION</div><div class="hc-val" style="color:'+(d.diversification==='Good'?'#4caf50':d.diversification==='Fair'?'#ffd54f':'#ef5350')+'">'+d.diversification+'</div></div>'+
+      '<div class="health-card"><div class="hc-label">WIN/LOSS</div><div class="hc-val"><span class="pos">'+wl[0]+'</span>/<span class="neg">'+wl[1]+'</span></div></div>'+
+      '<div class="health-card"><div class="hc-label">RECOVERY</div><div class="hc-val pos">'+d.recoveryPotential+'</div></div></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">'+
+      '<div style="background:#0a0e1a;border-radius:8px;padding:10px;"><div style="font-size:.68rem;color:#4caf50;margin-bottom:6px;">✅ STRENGTHS</div>'+d.strengths.map(function(s){return '<div style="font-size:.72rem;color:#b0c4d8;margin-bottom:4px;">• '+s+'</div>';}).join('')+'</div>'+
+      '<div style="background:#0a0e1a;border-radius:8px;padding:10px;"><div style="font-size:.68rem;color:#ef5350;margin-bottom:6px;">⚠️ WEAKNESSES</div>'+d.weaknesses.map(function(w){return '<div style="font-size:.72rem;color:#b0c4d8;margin-bottom:4px;">• '+w+'</div>';}).join('')+'</div></div>'+
+      '<div class="action-items"><div style="font-size:.68rem;color:#4fc3f7;margin-bottom:6px;">🎯 TOP ACTIONS</div>'+d.actions.map(function(a,i){return '<div class="action-item"><span style="color:#4fc3f7;font-weight:700;min-width:16px;">'+(i+1)+'.</span>'+a+'</div>';}).join('')+'</div>';
+    // AUTO-SAVE
+    await saveToStorage('health',content.innerHTML);
+    updateStorageStatus('Health Score');
+  }catch(e){content.innerHTML='<div style="color:#ef5350;padding:10px;">Error:'+e.message+'</div>';}
+  btn.disabled=false;btn.innerHTML='🔄 Refresh';
+}
+
+async function researchOne(id){
+  var el=document.getElementById('brief-'+id),btn=document.getElementById('rbtn-'+id);
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';}
+  el.innerHTML='<div class="loading"><span class="spinner"></span> Searching...</div>';
+  var s=PSE.find(function(x){return x.ticker===id;}),c=CRYPTO.find(function(x){return x.ticker===id;}),f=FUNDS.find(function(x){return x.ticker===id;});
+  var prompt='';
+  if(s) prompt='Research '+s.ticker+' PSE. LTP&#8369;'+s.ltp+'. Latest news,earnings,analyst ratings,risks,outlook. 5-8 sentences plain text.';
+  else if(c) prompt='Research '+c.name+'. Value&#8369;'+c.value+',24h:'+c.change24h+'%. Latest news,drivers,sentiment,risks,outlook. 5-8 sentences plain text.';
+  else if(f) prompt='Research '+f.name+'. Value&#8369;'+f.value+'. Performance,NAV,risks,outlook. 5-8 sentences plain text.';
+  try{
+    var txt=await callAI(prompt,true);
+    el.innerHTML='<span style="color:#b0c4d8;line-height:1.7">'+txt+'</span>';
+    // AUTO-SAVE
+    await saveToStorage('brief_'+id,el.innerHTML);
+    updateStorageStatus(id+' research');
+  }catch(e){el.innerHTML='<span style="color:#ef5350">Error:'+e.message+'</span>';}
+  if(btn){btn.disabled=false;btn.innerHTML='🔍 Re-research';}
+}
+async function briefAll(){
+  var btn=document.getElementById('briefAllBtn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Researching...';
+  var all=PSE.concat(CRYPTO).concat(FUNDS);
+  for(var i=0;i<all.length;i++) await researchOne(all[i].ticker);
+  btn.disabled=false;btn.innerHTML='📰 Research All';
+}
+
+async function loadDividends(){
+  var btn=document.getElementById('divBtn'),loading=document.getElementById('divLoading'),summary=document.getElementById('divSummary'),container=document.getElementById('divContainer');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Loading...';
+  loading.style.display='block';summary.innerHTML='';container.innerHTML='';
+  var b1=PSE.slice(0,5).map(function(s){return s.ticker;}).join(','),b2=PSE.slice(5).map(function(s){return s.ticker;}).join(',');
+  var allStocks=[];
+  function dp(t){return 'PSE dividend for: '+t+'.\nONLY valid JSON:\n{"stocks":[{"ticker":"","name":"","hasDividend":true,"dividendPerShare":"&#8369;X","annualYield":"X%","frequency":"Quarterly|Semi-annual|Annual","exDate":"MMM DD YYYY|N/A","paymentDate":"MMM DD YYYY|N/A","lastDeclared":"MMM DD YYYY|N/A","notes":"brief"}]}';}
+  try{var t1=await callAI(dp(b1),true);var d1=parseJSON(t1);if(d1.stocks)allStocks=allStocks.concat(d1.stocks);}catch(e){}
+  try{var t2=await callAI(dp(b2),true);var d2=parseJSON(t2);if(d2.stocks)allStocks=allStocks.concat(d2.stocks);}catch(e){}
+  loading.style.display='none';
+  if(!allStocks.length){container.innerHTML='<div style="color:#ef5350;padding:14px;">No data. Try again.</div>';btn.disabled=false;btn.innerHTML='🔄 Refresh';return;}
+  var totalIncome=0,bestYield=0,bestTicker='';
+  allStocks.forEach(function(s){
+    var ps=PSE.find(function(x){return x.ticker===s.ticker;});
+    var dps=parseFloat((s.dividendPerShare||'0').replace(/[^0-9.]/g,''))||0;
+    totalIncome+=dps*(ps?ps.qty:0);
+    var yld=parseFloat((s.annualYield||'0').replace(/[^0-9.]/g,''))||0;
+    if(yld>bestYield){bestYield=yld;bestTicker=s.ticker;}
+  });
+  var sumHTML='<div class="div-summary">'+
+    '<div class="div-sum-card"><div class="div-sum-label">EST. ANNUAL INCOME</div><div class="div-sum-val">&#8369;'+totalIncome.toFixed(2)+'</div></div>'+
+    '<div class="div-sum-card"><div class="div-sum-label">BEST YIELD</div><div class="div-sum-val">'+bestTicker+' '+bestYield.toFixed(2)+'%</div></div>'+
+    '<div class="div-sum-card"><div class="div-sum-label">DIVIDEND STOCKS</div><div class="div-sum-val">'+allStocks.filter(function(s){return s.hasDividend;}).length+'/'+PSE.length+'</div></div></div>';
+  summary.innerHTML=sumHTML;
+  var html='<div class="section-title">Per Stock Details</div>';
+  allStocks.forEach(function(stock){
+    var ps=PSE.find(function(s){return s.ticker===stock.ticker;}),qty=ps?ps.qty:0;
+    var dps=parseFloat((stock.dividendPerShare||'0').replace(/[^0-9.]/g,''))||0,est=dps*qty;
+    html+='<div class="div-card"><div class="div-card-header"><div><div class="card-ticker">'+stock.ticker+'</div><div class="card-sub">'+stock.name+'</div></div><span class="badge '+(stock.hasDividend?'buy':'hold')+'">'+(stock.hasDividend?'PAYS DIV':'NO DIV')+'</span></div><div class="div-card-body">';
+    if(stock.hasDividend){
+      html+='<div class="div-grid">'+
+        '<div class="div-item"><div class="div-item-label">DIV/SHARE</div><div class="div-item-val" style="color:#4caf50">'+stock.dividendPerShare+'</div></div>'+
+        '<div class="div-item"><div class="div-item-label">YIELD</div><div class="div-item-val" style="color:#4caf50">'+stock.annualYield+'</div></div>'+
+        '<div class="div-item"><div class="div-item-label">FREQUENCY</div><div class="div-item-val">'+stock.frequency+'</div></div>'+
+        '<div class="div-item"><div class="div-item-label">EX-DATE</div><div class="div-item-val" style="color:#ffd54f;font-size:.72rem;">'+stock.exDate+'</div></div>'+
+        '<div class="div-item"><div class="div-item-label">PAY DATE</div><div class="div-item-val" style="font-size:.72rem;">'+stock.paymentDate+'</div></div>'+
+        '<div class="div-item"><div class="div-item-label">LAST DECLARED</div><div class="div-item-val" style="font-size:.72rem;">'+stock.lastDeclared+'</div></div></div>';
+      if(est>0) html+='<div class="div-income"><div><div style="font-size:.62rem;color:#7fa8c9;">YOUR EST. INCOME ('+qty+' shares)</div><div style="font-size:.9rem;font-weight:700;color:#4caf50;">+&#8369;'+est.toFixed(2)+'</div></div></div>';
+    }else{html+='<div class="no-div">⚠️ No recent dividend. '+(stock.notes||'')+'</div>';}
+    html+='</div></div>';
+  });
+  html+='<div style="font-size:.68rem;color:#4a6080;margin-top:10px;padding:10px;background:#0d1b2a;border-radius:6px;">⚠️ Verify with PSE or your broker.</div>';
+  container.innerHTML=html;
+  // AUTO-SAVE
+  await saveToStorage('divs',html);
+  await saveToStorage('divsum',sumHTML);
+  updateStorageStatus('Dividend data');
+  btn.disabled=false;btn.innerHTML='🔄 Refresh';
+}
+
+function calcSnowball(){
+  var monthly=parseFloat(document.getElementById('sb-monthly').value)||5000;
+  var yieldPct=parseFloat(document.getElementById('sb-yield').value)||5.7;
+  var growthPct=parseFloat(document.getElementById('sb-growth').value)||5;
+  var reinvest=document.getElementById('sb-reinvest').value==='yes';
+  var years=parseInt(document.getElementById('sb-years').value)||5;
+  var stockId=document.getElementById('sb-stock').value;
+  var ps=PSE.find(function(s){return s.ticker===stockId;});
+  var portfolioValue=ps?ps.mktVal:0,totalInvested=ps?ps.avg*ps.qty:0,totalDiv=0;
+  var results=[];
+  for(var y=1;y<=years;y++){
+    portfolioValue=(portfolioValue+monthly*12)*(1+growthPct/100);
+    var yd=portfolioValue*(yieldPct/100);totalDiv+=yd;totalInvested+=monthly*12;
+    if(reinvest)portfolioValue+=yd;
+    results.push({year:2025+y,pv:portfolioValue,yd:yd,ti:totalInvested,td:totalDiv});
+  }
+  var fin=results[results.length-1],maxPV=Math.max.apply(null,results.map(function(r){return r.pv;}));
+  var html='<div class="sb-result-card">'+
+    '<div style="font-size:.82rem;color:#4fc3f7;font-weight:700;margin-bottom:10px;">📊 '+stockId+' — &#8369;'+monthly.toLocaleString()+'/mo × '+years+' yrs'+(reinvest?' (reinvesting)':'')+'</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:12px;">'+
+    '<div class="sb-year-item"><div class="sb-year-label">PORTFOLIO '+fin.year+'</div><div class="sb-year-val">&#8369;'+Math.round(fin.pv).toLocaleString()+'</div></div>'+
+    '<div class="sb-year-item"><div class="sb-year-label">ANNUAL DIVIDENDS</div><div class="sb-year-val" style="color:#4caf50">&#8369;'+Math.round(fin.yd).toLocaleString()+'</div></div>'+
+    '<div class="sb-year-item"><div class="sb-year-label">MONTHLY DIVIDENDS</div><div class="sb-year-val" style="color:#4caf50">&#8369;'+Math.round(fin.yd/12).toLocaleString()+'</div></div>'+
+    '<div class="sb-year-item"><div class="sb-year-label">TOTAL INVESTED</div><div class="sb-year-val" style="color:#7fa8c9">&#8369;'+Math.round(fin.ti).toLocaleString()+'</div></div>'+
+    '<div class="sb-year-item"><div class="sb-year-label">TOTAL DIVS EARNED</div><div class="sb-year-val" style="color:#4caf50">&#8369;'+Math.round(fin.td).toLocaleString()+'</div></div>'+
+    '<div class="sb-year-item"><div class="sb-year-label">REINVESTING?</div><div class="sb-year-val" style="color:'+(reinvest?'#4caf50':'#ffd54f')+'">'+(reinvest?'YES ✅':'NO ❌')+'</div></div>'+
+    '</div><div class="sb-bar-wrap">';
+  results.forEach(function(r){
+    var pct=Math.round((r.pv/maxPV)*100);
+    html+='<div class="sb-bar-row"><div class="sb-bar-label">'+r.year+'</div><div class="sb-bar-bg"><div class="sb-bar-fill" style="width:'+pct+'%;background:linear-gradient(90deg,#1565c0,#4fc3f7);"></div><div class="sb-bar-val">&#8369;'+Math.round(r.pv).toLocaleString()+' <span style="color:#4caf50">(div:&#8369;'+Math.round(r.yd).toLocaleString()+')</span></div></div></div>';
+  });
+  html+='</div></div>';
+  var compare=['MER','DMC','BDO','BPI','NIKL','SMPH','ALI'].map(function(t){
+    var m=STOCK_META[t],yld=m?m.yield:2,ps2=PSE.find(function(s){return s.ticker===t;}),pv2=ps2?ps2.mktVal:0,td2=0;
+    for(var y=1;y<=years;y++){pv2=(pv2+monthly*12)*(1+growthPct/100);var yd2=pv2*(yld/100);td2+=yd2;if(reinvest)pv2+=yd2;}
+    return {t:t,yd:pv2*(yld/100),yld:yld};
+  });
+  var maxY=Math.max.apply(null,compare.map(function(r){return r.yd;}));
+  compare.sort(function(a,b){return b.yd-a.yd;});
+  html+='<div class="sb-result-card"><div style="font-size:.82rem;color:#4fc3f7;font-weight:700;margin-bottom:10px;">🏆 Best Dividend Pick Comparison</div><div class="sb-bar-wrap">';
+  compare.forEach(function(r){
+    var pct=Math.round((r.yd/maxY)*100);
+    html+='<div class="sb-bar-row"><div class="sb-bar-label">'+r.t+'</div><div class="sb-bar-bg"><div class="sb-bar-fill" style="width:'+pct+'%;background:linear-gradient(90deg,#2e7d32,#4caf50);"></div><div class="sb-bar-val">&#8369;'+Math.round(r.yd).toLocaleString()+'/yr ('+r.yld+'%)</div></div></div>';
+  });
+  html+='</div></div><div style="font-size:.68rem;color:#4a6080;padding:10px;background:#0d1b2a;border-radius:6px;">⚠️ Projections assume constant yield/growth. Not financial advice.</div>';
+  document.getElementById('sb-results').innerHTML=html;
+  // AUTO-SAVE
+  saveToStorage('sb',html);
+  updateStorageStatus('Snowball');
+}
+
+async function loadRiskZone(){
+  var btn=document.getElementById('rzBtn'),loading=document.getElementById('rzLoading'),container=document.getElementById('rzContainer');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Analyzing...';
+  loading.style.display='block';container.innerHTML='';
+  var prompt='PSE analyst. Assess buy zone:\n'+PSE.map(function(s){var m=STOCK_META[s.ticker];return s.ticker+':LTP=&#8369;'+s.ltp+',FV=&#8369;'+(m?m.fairValue:'N/A');}).join('\n')+
+    '\nONLY valid JSON:\n{"stocks":[{"ticker":"","zone":"Buy Zone|Neutral|Overvalued|High Risk","zoneReason":"1 sentence","priceToFV":"X% below/above fair value"}]}';
+  try{
+    var txt=await callAI(prompt,false);
+    var d=parseJSON(txt);
+    loading.style.display='none';
+    var meterColors={'Defensive':['#4caf50','#4caf50','#8bc34a','#1e3a5f','#1e3a5f'],'Cyclical':['#ffd54f','#ffd54f','#ffd54f','#1e3a5f','#1e3a5f'],'Recovery':['#4fc3f7','#4fc3f7','#1e3a5f','#1e3a5f','#1e3a5f'],'Speculative':['#ef5350','#ef5350','#ef5350','#ef5350','#1e3a5f']};
+    var html='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px;background:#0d1b2a;border-radius:8px;">'+
+      '<span style="font-size:.7rem;color:#b0c4d8;font-weight:700;">Risk:</span>'+
+      '<span class="badge risk-def">Defensive</span><span class="badge risk-cyc">Cyclical</span><span class="badge risk-rec">Recovery</span><span class="badge risk-spec">Speculative</span>'+
+      '<span style="font-size:.7rem;color:#b0c4d8;font-weight:700;margin-left:8px;">Zone:</span>'+
+      '<span class="zone-badge zone-buy">Buy Zone</span><span class="zone-badge zone-neutral">Neutral</span><span class="zone-badge zone-overvalued">Overvalued</span><span class="zone-badge zone-highrisk">High Risk</span>'+
+      '</div><div class="rz-grid">';
+    PSE.forEach(function(s){
+      var m=STOCK_META[s.ticker],zd=d.stocks.find(function(x){return x.ticker===s.ticker;})||{zone:'Neutral',zoneReason:'No data',priceToFV:'N/A'};
+      var rc='risk-'+(m?m.risk.toLowerCase():'cyc'),zc='zone-'+(zd.zone==='Buy Zone'?'buy':zd.zone==='Overvalued'?'overvalued':zd.zone==='High Risk'?'highrisk':'neutral');
+      var fvPct=m?((s.ltp-m.fairValue)/m.fairValue*100):0,colors=m?meterColors[m.risk]:meterColors['Cyclical'];
+      html+='<div class="rz-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="card-ticker">'+s.ticker+'</div><div class="card-sub">'+(m?m.sector:'')+'</div></div><span class="badge '+rc+'">'+(m?m.risk:'?')+'</span></div>'+
+        '<div style="font-size:.7rem;color:#b0c4d8;margin-bottom:8px;">'+(m?m.desc:'')+'</div>'+
+        '<div style="font-size:.62rem;color:#7fa8c9;margin-bottom:4px;">RISK METER</div>'+
+        '<div class="risk-meter">'+colors.map(function(c){return '<div class="risk-seg" style="background:'+c+'"></div>';}).join('')+'</div>'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px;">'+
+        '<div><div style="font-size:.6rem;color:#7fa8c9;">LTP vs Fair Value</div><div style="font-size:.78rem;font-weight:700;color:'+(fvPct<=0?'#4caf50':'#ef5350')+'">&#8369;'+s.ltp+' vs &#8369;'+(m?m.fairValue:'?')+' ('+(fvPct<=0?'':'+')+(fvPct).toFixed(1)+'%)</div></div>'+
+        '<span class="zone-badge '+zc+'">'+zd.zone+'</span></div>'+
+        '<div style="font-size:.7rem;color:#b0c4d8;margin-top:6px;padding:6px;background:#0a0e1a;border-radius:6px;">💡 '+zd.zoneReason+'</div>'+
+        '<div style="font-size:.68rem;color:#7fa8c9;margin-top:4px;">'+zd.priceToFV+'</div></div>';
+    });
+    html+='</div><div style="font-size:.68rem;color:#4a6080;margin-top:12px;padding:10px;background:#0d1b2a;border-radius:6px;">⚠️ Fair values are estimates. Not financial advice.</div>';
+    container.innerHTML=html;
+    // AUTO-SAVE
+    await saveToStorage('rz',html);
+    updateStorageStatus('Risk & Zone');
+  }catch(e){loading.style.display='none';container.innerHTML='<div style="color:#ef5350;padding:14px;">Error:'+e.message+'</div>';}
+  btn.disabled=false;btn.innerHTML='🔄 Refresh';
+}
+
+async function generatePicks(){
+  var btn=document.getElementById('picksBtn'),loading=document.getElementById('picksLoading'),container=document.getElementById('picksContainer');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Researching...';
+  loading.style.display='block';container.innerHTML='';
+  var owned=PSE.map(function(s){return s.ticker;}).concat(CRYPTO.map(function(c){return c.ticker;})).concat(FUNDS.map(function(f){return f.name;})).join(',');
+  var html='';
+  function scH(p){return '<div class="scenarios"><div class="scenario"><div class="sc-label">BULL</div><div class="sc-val bull">'+p.bull+'</div></div><div class="scenario"><div class="sc-label">BASE</div><div class="sc-val base">'+p.base+'</div></div><div class="scenario"><div class="sc-label">BEAR</div><div class="sc-val bear">'+p.bear+'</div></div></div>';}
+  function pCard(ticker,name,meta,scen,reason){return '<div class="stock-card"><div class="card-header"><div><div class="card-ticker">'+ticker+'</div><div class="card-sub">'+name+'</div></div><span class="badge buy">BUY</span></div><div class="card-body"><div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.72rem;margin-bottom:8px;">'+meta+'</div>'+scen+'<div class="briefer-box">'+reason+'</div></div></div>';}
+  try{var pt=await callAI('PSE analyst. Owns:'+owned+'. Top 2 PSE NOT owned.\nONLY JSON:\n{"pse":[{"ticker":"","name":"","currentPrice":"&#8369;X","targetPrice":"&#8369;X","upside":"+X%","timeframe":"X months","riskLevel":"Low|Medium|High","bull":"+X%","base":"+X%","bear":"-X%","reason":"short"}]}',true);var pse=parseJSON(pt);if(pse.pse&&pse.pse.length){html+='<div class="section-title">📈 PSE Picks</div><div class="stock-grid">';html+=pse.pse.map(function(p){return pCard(p.ticker,p.name,'<span style="color:#7fa8c9">Now:<b style="color:#fff">'+p.currentPrice+'</b></span><span style="color:#7fa8c9">Target:<b style="color:#4caf50">'+p.targetPrice+'</b></span><span class="pos">'+p.upside+'</span><span class="risk-badge" style="'+riskStyle(p.riskLevel)+'">'+p.riskLevel+'</span>',scH(p),p.reason);}).join('');html+='</div>';}}catch(e){html+='<div style="color:#ef5350;padding:10px;">PSE error:'+e.message+'</div>';}
+  try{var ct=await callAI('Crypto analyst. Owns:'+owned+'. Top 1 NOT owned.\nONLY JSON:\n{"crypto":[{"ticker":"","name":"","currentPrice":"$X","targetPrice":"$X","upside":"+X%","timeframe":"X months","riskLevel":"Low|Medium|High","bull":"+X%","base":"+X%","bear":"-X%","reason":"short"}]}',true);var crypto=parseJSON(ct);if(crypto.crypto&&crypto.crypto.length){html+='<div class="section-title" style="margin-top:18px;">₿ Crypto Pick</div><div class="stock-grid">';html+=crypto.crypto.map(function(p){return pCard(p.ticker,p.name,'<span style="color:#7fa8c9">Now:<b style="color:#fff">'+p.currentPrice+'</b></span><span style="color:#7fa8c9">Target:<b style="color:#4caf50">'+p.targetPrice+'</b></span><span class="pos">'+p.upside+'</span><span class="risk-badge" style="'+riskStyle(p.riskLevel)+'">'+p.riskLevel+'</span>',scH(p),p.reason);}).join('');html+='</div>';}}catch(e){html+='<div style="color:#ef5350;padding:10px;">Crypto error:'+e.message+'</div>';}
+  try{var ft=await callAI('Fund analyst. Owns:'+owned+'. Top 1 PH fund NOT owned.\nONLY JSON:\n{"funds":[{"name":"","provider":"","riskLevel":"Low|Medium|High","expectedReturn":"+X% p.a.","timeframe":"X years","reason":"short"}]}',false);var funds=parseJSON(ft);if(funds.funds&&funds.funds.length){html+='<div class="section-title" style="margin-top:18px;">🏦 Fund Pick</div><div class="stock-grid">';html+=funds.funds.map(function(p){return pCard(p.provider,p.name,'<span style="color:#7fa8c9">Expected:<b style="color:#4caf50">'+p.expectedReturn+'</b></span><span style="color:#7fa8c9">Horizon:<b style="color:#fff">'+p.timeframe+'</b></span><span class="risk-badge" style="'+riskStyle(p.riskLevel)+'">'+p.riskLevel+'</span>','',p.reason);}).join('');html+='</div>';}}catch(e){html+='<div style="color:#ef5350;padding:10px;">Fund error:'+e.message+'</div>';}
+  html+='<div style="font-size:.68rem;color:#4a6080;margin-top:14px;padding:10px;background:#0d1b2a;border-radius:6px;">⚠️ Not financial advice.</div>';
+  loading.style.display='none';
+  container.innerHTML=html||'<div style="color:#ef5350;padding:14px;">No picks returned.</div>';
+  // AUTO-SAVE
+  await saveToStorage('picks',container.innerHTML);
+  updateStorageStatus('Stock Picks');
+  btn.disabled=false;btn.innerHTML='🔄 Refresh Picks';
+}
+
+var chartsRendered=false;
+function renderCharts(){
+  if(chartsRendered)return;chartsRendered=true;
+  var pseTot=PSE.reduce(function(a,s){return a+s.mktVal;},0),cryptoTot=CRYPTO.reduce(function(a,c){return a+c.value;},0),fundsTot=FUNDS.reduce(function(a,f){return a+f.value;},0);
+  new Chart(document.getElementById('allocByClass'),{type:'doughnut',data:{labels:['PSE','Crypto','GFunds'],datasets:[{data:[pseTot,cryptoTot,fundsTot],backgroundColor:['#1565c0','#7b1fa2','#2e7d32'],borderColor:'#0a0e1a',borderWidth:2}]},options:{responsive:true,plugins:{legend:{labels:{color:'#b0c4d8'}}}}});
+  var pnls=PSE.map(function(s){return parseFloat(pnl(s).toFixed(2));});
+  new Chart(document.getElementById('psePnlChart'),{type:'bar',data:{labels:PSE.map(function(s){return s.ticker;}),datasets:[{data:pnls,backgroundColor:pnls.map(function(v){return v>=0?'rgba(76,175,80,.8)':'rgba(239,83,80,.8)';}),borderColor:pnls.map(function(v){return v>=0?'#4caf50':'#ef5350';}),borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7fa8c9'},grid:{color:'#1e3a5f'}},y:{ticks:{color:'#7fa8c9'},grid:{color:'#1e3a5f'}}}}});
+  var all=PSE.map(function(s){return {l:s.ticker,v:s.mktVal};}).concat(CRYPTO.map(function(c){return {l:c.ticker,v:c.value};})).concat(FUNDS.map(function(f){return {l:f.ticker,v:f.value};}));
+  var colors=['#1565c0','#1976d2','#1e88e5','#2196f3','#42a5f5','#4fc3f7','#80deea','#00897b','#43a047','#7cb342','#7b1fa2','#9c27b0','#ba68c8','#2e7d32','#388e3c'];
+  new Chart(document.getElementById('allAllocChart'),{type:'doughnut',data:{labels:all.map(function(x){return x.l;}),datasets:[{data:all.map(function(x){return x.v;}),backgroundColor:colors,borderColor:'#0a0e1a',borderWidth:2}]},options:{responsive:true,plugins:{legend:{labels:{color:'#b0c4d8',font:{size:10}}}}}});
+}
+
+function switchTab(name,el){
+  ALL_TABS.forEach(function(id){
+    var tc=document.getElementById('tab-'+id);if(tc)tc.classList.remove('active');
+    var tb=document.getElementById('t-'+id);if(tb)tb.classList.remove('active');
+  });
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('t-'+name).classList.add('active');
+  if(name==='charts')setTimeout(renderCharts,100);
+}
+
+function _divCard(ticker,name,hasDiv,dps,yld,freq,exDate,payDate,lastDec,qty,est,note){
+  var html='<div class="div-card"><div class="div-card-header"><div><div class="card-ticker">'+ticker+'</div><div class="card-sub">'+name+'</div></div><span class="badge '+(hasDiv?'buy':'hold')+'">'+(hasDiv?'PAYS DIVIDEND':'NO DIVIDEND')+'</span></div><div class="div-card-body">';
+  if(hasDiv){
+    html+='<div class="div-grid">'+
+      '<div class="div-item"><div class="div-item-label">DIV/SHARE</div><div class="div-item-val" style="color:#4caf50">'+dps+'</div></div>'+
+      '<div class="div-item"><div class="div-item-label">YIELD</div><div class="div-item-val" style="color:#4caf50">'+yld+'</div></div>'+
+      '<div class="div-item"><div class="div-item-label">FREQUENCY</div><div class="div-item-val">'+freq+'</div></div>'+
+      '<div class="div-item"><div class="div-item-label">EX-DATE</div><div class="div-item-val" style="color:#ffd54f;font-size:.72rem;">'+exDate+'</div></div>'+
+      '<div class="div-item"><div class="div-item-label">PAY DATE</div><div class="div-item-val" style="font-size:.72rem;">'+payDate+'</div></div>'+
+      '<div class="div-item"><div class="div-item-label">LAST DECLARED</div><div class="div-item-val" style="font-size:.72rem;">'+lastDec+'</div></div></div>'+
+      '<div class="div-income"><div><div style="font-size:.62rem;color:#7fa8c9;">YOUR EST. INCOME ('+qty+' shares)</div><div style="font-size:.9rem;font-weight:700;color:#4caf50;">+&#8369;'+est+'</div></div><div style="font-size:.68rem;color:#b0c4d8;text-align:right;">per<br>declaration</div></div>'+
+      '<div style="font-size:.7rem;color:#7fa8c9;margin-top:8px;">📌 '+note+'</div>';
+  } else {
+    html+='<div class="no-div">⚠️ '+note+'</div>';
+  }
+  return html+'</div></div>';
+}
+
+// ── INIT ─────────────────────────────────────────
+loadPSEStocks();loadCryptoAssets();loadFundAssets();updatePortfolioTotals();renderSummary();renderTables();renderAnalysisGrids();renderBrieferGrids();
+setTimeout(function(){
+  // Restore health score
+  var hc=document.getElementById('healthContent');
+  if(hc&&SAVED_RESULTS.health) hc.innerHTML=SAVED_RESULTS.health;
+  // Restore per-stock analysis, technicals, predictions
+  var ids=Object.keys(SAVED_RESULTS.analysis);
+  ids.forEach(function(id){
+    var d=SAVED_RESULTS.analysis[id];
+    // Badge/signal
+    var card=document.getElementById('acard-'+id);
+    if(card&&d.signal){var b=card.querySelector('.card-header .badge');if(b){b.className='badge '+d.signal;b.textContent=d.signal.toUpperCase();}}
+    // AI summary
+    if(d.ai&&document.getElementById('ai-'+id)) document.getElementById('ai-'+id).innerHTML=d.ai;
+    // Price targets
+    if(d.pt&&document.getElementById('pt-'+id)) document.getElementById('pt-'+id).innerHTML=d.pt;
+    // Scenarios
+    if(d.sc&&document.getElementById('sc-'+id)) document.getElementById('sc-'+id).innerHTML=d.sc;
+    // Technicals
+    if(d.ti){var te=document.getElementById('ti-'+id);if(te){te.innerHTML=d.ti;te.style.display='block';}}
+    // Predictions
+    if(d.pred){var pe=document.getElementById('pred-'+id);if(pe){pe.innerHTML=d.pred;pe.style.display='block';}}
+  });
+  // Restore Risk & Zone
+  var rzEl=document.getElementById('rzContainer');
+  if(rzEl) rzEl.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px;background:#0d1b2a;border-radius:8px;"><span style="font-size:.7rem;color:#b0c4d8;font-weight:700;">Risk:</span><span class="badge risk-def">Defensive</span><span class="badge risk-cyc">Cyclical</span><span class="badge risk-rec">Recovery</span><span class="badge risk-spec">Speculative</span><span style="font-size:.7rem;color:#b0c4d8;font-weight:700;margin-left:8px;">Zone:</span><span class="zone-badge zone-buy">Buy Zone</span><span class="zone-badge zone-neutral">Neutral</span><span class="zone-badge zone-overvalued">Overvalued</span><span class="zone-badge zone-highrisk">High Risk</span></div><div class="rz-grid"><div class="rz-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="card-ticker">ALI</div><div class="card-sub">Property</div></div><span class="badge risk-rec">Recovery</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-bottom:8px;">Ayala Land — blue chip property in recovery</div><div style="font-size:.62rem;color:#7fa8c9;margin-bottom:4px;">RISK METER</div><div class="risk-meter"><div class="risk-seg" style="background:#4fc3f7"></div><div class="risk-seg" style="background:#4fc3f7"></div><div class="risk-seg" style="background:#1e3a5f"></div><div class="risk-seg" style="background:#1e3a5f"></div><div class="risk-seg" style="background:#1e3a5f"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px;"><div><div style="font-size:.6rem;color:#7fa8c9;">LTP vs Fair Value</div><div style="font-size:.78rem;font-weight:700;color:#4caf50;">&#8369;15.3 vs &#8369;28 (-45.4%)</div></div><span class="zone-badge zone-buy">Buy Zone</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-top:6px;padding:6px;background:#0a0e1a;border-radius:6px;">💡 Trading at a steep 45.4% discount to fair value, offering significant margin of safety for long-term accumulation.</div><div style="font-size:.68rem;color:#7fa8c9;margin-top:4px;">45.4% below fair value</div></div><div class="rz-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="card-ticker">BDO</div><div class="card-sub">Banking</div></div><span class="badge risk-def">Defensive</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-bottom:8px;">BDO Unibank — largest PH bank, stable dividends</div><div style="font-size:.62rem;color:#7fa8c9;margin-bottom:4px;">RISK METER</div><div class="risk-meter"><div class="risk-seg" style="background:#4caf50"></div><div class="risk-seg" style="background:#4caf50"></div><div class="risk-seg" style="background:#8bc34a"></div><div class="risk-seg" style="background:#1e3a5f"></div><div class="risk-seg" style="background:#1e3a5f"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px;"><div><div style="font-size:.6rem;color:#7fa8c9;">LTP vs Fair Value</div><div style="font-size:.78rem;font-weight:700;color:#4caf50;">&#8369;114.9 vs &#8369;145 (-20.8%)</div></div><span class="zone-badge zone-buy">Buy Zone</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-top:6px;padding:6px;background:#0a0e1a;border-radius:6px;">💡 Trading 20.8% below fair value, presenting a solid entry point with moderate upside potential.</div><div style="font-size:.68rem;color:#7fa8c9;margin-top:4px;">20.8% below fair value</div></div><div class="rz-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="card-ticker">BPI</div><div class="card-sub">Banking</div></div><span class="badge risk-def">Defensive</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-bottom:8px;">Bank of the Philippine Islands — solid dividend payer</div><div style="font-size:.62rem;color:#7fa8c9;margin-bottom:4px;">RISK METER</div><div class="risk-meter"><div class="risk-seg" style="background:#4caf50"></div><div class="risk-seg" style="background:#4caf50"></div><div class="risk-seg" style="background:#8bc34a"></div><div class="risk-seg" style="background:#1e3a5f"></div><div class="risk-seg" style="background:#1e3a5f"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px;"><div><div style="font-size:.6rem;color:#7fa8c9;">LTP vs Fair Value</div><div style="font-size:.78rem;font-weight:700;color:#4caf50;">&#8369;89.95 vs &#8369;120 (-25.0%)</div></div><span class="zone-badge zone-buy">Buy Zone</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-top:6px;padding:6px;background:#0a0e1a;border-radius:6px;">💡 Priced 25.0% below fair value, making it an attractive accumulation candidate among Philippine banks.</div><div style="font-size:.68rem;color:#7fa8c9;margin-top:4px;">25.0% below fair value</div></div><div class="rz-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="card-ticker">CEB</div><div class="card-sub">Aviation</div></div><span class="badge risk-cyc">Cyclical</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-bottom:8px;">Cebu Air — airline, highly cyclical</div><div style="font-size:.62rem;color:#7fa8c9;margin-bottom:4px;">RISK METER</div><div class="risk-meter"><div class="risk-seg" style="background:#ffd54f"></div><div class="risk-seg" style="background:#ffd54f"></div><div class="risk-seg" style="background:#ffd54f"></div><div class="risk-seg" style="background:#1e3a5f"></div><div class="risk-seg" style="background:#1e3a5f"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px;"><div><div style="font-size:.6rem;color:#7fa8c9;">LTP vs Fair Value</div><div style="font-size:.78rem;font-weight:700;color:#4caf50;">&#8369;30.1 vs &#8369;55 (-45.3%)</div></div><span class="zone-badge zone-buy">Buy Zone</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-top:6px;padding:6px;background:#0a0e1a;border-radius:6px;">💡 Trading at a deep 45.3% discount to fair value, suggesting strong upside if operational recovery continues.</div><div style="font-size:.68rem;color:#7fa8c9;margin-top:4px;">45.3% below fair value</div></div><div class="rz-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="card-ticker">DITO</div><div class="card-sub">Telecom</div></div><span class="badge risk-spec">Speculative</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-bottom:8px;">DITO CME — new telco, high risk, no dividends</div><div style="font-size:.62rem;color:#7fa8c9;margin-bottom:4px;">RISK METER</div><div class="risk-meter"><div class="risk-seg" style="background:#ef5350"></div><div class="risk-seg" style="background:#ef5350"></div><div class="risk-seg" style="background:#ef5350"></div><div class="risk-seg" style="background:#ef5350"></div><div class="risk-seg" style="background:#1e3a5f"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px;"><div><div style="font-size:.6rem;color:#7fa8c9;">LTP vs Fair Value</div><div style="font-size:.78rem;font-weight:700;color:#ef5350;">&#8369;0.82 vs &#8369;5 (-83.6%)</div></div><span class="zone-badge zone-highrisk">High Risk</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-top:6px;padding:6px;background:#0a0e1a;border-radius:6px;">💡 Despite an 83.6% discount to fair value, the extreme gap signals high speculative risk and uncertain fundamental execution.</div><div style="font-size:.68rem;color:#7fa8c9;margin-top:4px;">83.6% below fair value</div></div><div class="rz-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="card-ticker">DMC</div><div class="card-sub">Conglomerate</div></div><span class="badge risk-def">Defensive</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-bottom:8px;">DMCI Holdings — consistent dividends</div><div style="font-size:.62rem;color:#7fa8c9;margin-bottom:4px;">RISK METER</div><div class="risk-meter"><div class="risk-seg" style="background:#4caf50"></div><div class="risk-seg" style="background:#4caf50"></div><div class="risk-seg" style="background:#8bc34a"></div><div class="risk-seg" style="background:#1e3a5f"></div><div class="risk-seg" style="background:#1e3a5f"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px;"><div><div style="font-size:.6rem;color:#7fa8c9;">LTP vs Fair Value</div><div style="font-size:.78rem;font-weight:700;color:#4caf50;">&#8369;9.24 vs &#8369;14 (-34.0%)</div></div><span class="zone-badge zone-buy">Buy Zone</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-top:6px;padding:6px;background:#0a0e1a;border-radius:6px;">💡 Trading 34.0% below fair value, offering a compelling discount for investors with medium-term conviction.</div><div style="font-size:.68rem;color:#7fa8c9;margin-top:4px;">34.0% below fair value</div></div><div class="rz-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="card-ticker">MER</div><div class="card-sub">Utilities</div></div><span class="badge risk-def">Defensive</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-bottom:8px;">Meralco — monopoly utility, highest yield</div><div style="font-size:.62rem;color:#7fa8c9;margin-bottom:4px;">RISK METER</div><div class="risk-meter"><div class="risk-seg" style="background:#4caf50"></div><div class="risk-seg" style="background:#4caf50"></div><div class="risk-seg" style="background:#8bc34a"></div><div class="risk-seg" style="background:#1e3a5f"></div><div class="risk-seg" style="background:#1e3a5f"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px;"><div><div style="font-size:.6rem;color:#7fa8c9;">LTP vs Fair Value</div><div style="font-size:.78rem;font-weight:700;color:#ef5350;">&#8369;615 vs &#8369;420 (+46.4%)</div></div><span class="zone-badge zone-overvalued">Overvalued</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-top:6px;padding:6px;background:#0a0e1a;border-radius:6px;">💡 LTP exceeds fair value by 46.4%, indicating the stock is significantly overpriced relative to its intrinsic worth.</div><div style="font-size:.68rem;color:#7fa8c9;margin-top:4px;">46.4% above fair value</div></div><div class="rz-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="card-ticker">NIKL</div><div class="card-sub">Mining</div></div><span class="badge risk-cyc">Cyclical</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-bottom:8px;">Nickel Asia — commodity, cyclical</div><div style="font-size:.62rem;color:#7fa8c9;margin-bottom:4px;">RISK METER</div><div class="risk-meter"><div class="risk-seg" style="background:#ffd54f"></div><div class="risk-seg" style="background:#ffd54f"></div><div class="risk-seg" style="background:#ffd54f"></div><div class="risk-seg" style="background:#1e3a5f"></div><div class="risk-seg" style="background:#1e3a5f"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px;"><div><div style="font-size:.6rem;color:#7fa8c9;">LTP vs Fair Value</div><div style="font-size:.78rem;font-weight:700;color:#4caf50;">&#8369;4.86 vs &#8369;6.5 (-25.2%)</div></div><span class="zone-badge zone-buy">Buy Zone</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-top:6px;padding:6px;background:#0a0e1a;border-radius:6px;">💡 Trading 25.2% below fair value, presenting a reasonable entry with commodity-linked upside potential.</div><div style="font-size:.68rem;color:#7fa8c9;margin-top:4px;">25.2% below fair value</div></div><div class="rz-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="card-ticker">PCOR</div><div class="card-sub">Oil & Gas</div></div><span class="badge risk-spec">Speculative</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-bottom:8px;">Petron Corp — high debt, speculative</div><div style="font-size:.62rem;color:#7fa8c9;margin-bottom:4px;">RISK METER</div><div class="risk-meter"><div class="risk-seg" style="background:#ef5350"></div><div class="risk-seg" style="background:#ef5350"></div><div class="risk-seg" style="background:#ef5350"></div><div class="risk-seg" style="background:#ef5350"></div><div class="risk-seg" style="background:#1e3a5f"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px;"><div><div style="font-size:.6rem;color:#7fa8c9;">LTP vs Fair Value</div><div style="font-size:.78rem;font-weight:700;color:#4caf50;">&#8369;2.43 vs &#8369;4.5 (-46.0%)</div></div><span class="zone-badge zone-buy">Buy Zone</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-top:6px;padding:6px;background:#0a0e1a;border-radius:6px;">💡 Priced 46.0% below fair value, offering deep value though downstream sector headwinds warrant position sizing caution.</div><div style="font-size:.68rem;color:#7fa8c9;margin-top:4px;">46.0% below fair value</div></div><div class="rz-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="card-ticker">SMPH</div><div class="card-sub">Property</div></div><span class="badge risk-rec">Recovery</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-bottom:8px;">SM Prime Holdings — mall operator recovering</div><div style="font-size:.62rem;color:#7fa8c9;margin-bottom:4px;">RISK METER</div><div class="risk-meter"><div class="risk-seg" style="background:#4fc3f7"></div><div class="risk-seg" style="background:#4fc3f7"></div><div class="risk-seg" style="background:#1e3a5f"></div><div class="risk-seg" style="background:#1e3a5f"></div><div class="risk-seg" style="background:#1e3a5f"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:6px;"><div><div style="font-size:.6rem;color:#7fa8c9;">LTP vs Fair Value</div><div style="font-size:.78rem;font-weight:700;color:#4caf50;">&#8369;18.96 vs &#8369;32 (-40.8%)</div></div><span class="zone-badge zone-buy">Buy Zone</span></div><div style="font-size:.7rem;color:#b0c4d8;margin-top:6px;padding:6px;background:#0a0e1a;border-radius:6px;">💡 Trading at a 40.8% discount to fair value, making it an attractive long-term accumulation opportunity in the property sector.</div><div style="font-size:.68rem;color:#7fa8c9;margin-top:4px;">40.8% below fair value</div></div></div><div style="font-size:.68rem;color:#4a6080;margin-top:12px;padding:10px;background:#0d1b2a;border-radius:6px;">⚠️ Fair values are estimates. Not financial advice.</div>';
+
+  // Restore Dividends Summary
+  var divSEl=document.getElementById('divSummary');
+  if(divSEl) divSEl.innerHTML='<div class="div-summary"><div class="div-sum-card"><div class="div-sum-label">EST. ANNUAL INCOME</div><div class="div-sum-val">&#8369;459.54</div></div><div class="div-sum-card"><div class="div-sum-label">BEST YIELD</div><div class="div-sum-val">DMC 8.63%</div></div><div class="div-sum-card"><div class="div-sum-label">DIVIDEND STOCKS</div><div class="div-sum-val">8 / 10</div></div><div class="div-sum-card"><div class="div-sum-label">NON-DIVIDEND</div><div class="div-sum-val" style="color:#ef5350;">2 stocks</div></div></div>';
+
+  // Restore Dividends Container
+  var divCEl=document.getElementById('divContainer');
+  if(divCEl) divCEl.innerHTML='<div class="section-title">Per Stock Details</div>'+
+    _divCard('ALI','Ayala Land, Inc.',true,'&#8369;0.29','2.77%','Semi-annual','Mar 04 2025','Mar 21 2025','Mar 04 2025',20,'5.80','2 tranches in 2025; total &#8369;0.58/yr')+
+    _divCard('BDO','BDO Unibank, Inc.',true,'&#8369;1.10','3.28%','Quarterly','Dec 22 2025','Dec 29 2025','Feb 27 2026',46,'50.60','Q1 2026 div declared; &#8369;4.40 annualized')+
+    _divCard('BPI','Bank of the Philippine Islands',true,'&#8369;2.08','3.71%','Semi-annual','Jun 09 2025','N/A','Jun 09 2025',40,'83.20','&#8369;4.16 annualized; next ex-date ~Dec 2025')+
+    _divCard('CEB','Cebu Air, Inc.',false,'','','','','','',0,'','No recent dividend declared. Resumed div Aug 2025; details pending')+
+    _divCard('DITO','DITO CME Holdings Corp.',false,'','','','','','',0,'','No recent dividend declared. No dividends paid; net loss company')+
+    _divCard('DMC','DMCI Holdings, Inc.',true,'&#8369;0.30','8.63%','Semi-annual','May 20 2026','Jun 05 2026','May 20 2026',800,'240.00','Semi-annual; &#8369;0.35 paid Apr 2025')+
+    _divCard('MER','Manila Electric Company',true,'&#8369;16.67','4.05%','Semi-annual','Mar 26 2026','May 05 2026','Feb 24 2025',2,'33.34','Annual ~&#8369;24.03; 50% payout policy')+
+    _divCard('NIKL','Nickel Asia Corporation',true,'&#8369;0.07','2.82%','Annual','Nov 27 2025','Dec 15 2025','Nov 12 2025',100,'7.00','Annual; ≤30% of prior-yr net income')+
+    _divCard('PCOR','Petron Corporation',true,'&#8369;0.10','4.33%','Annual','Mar 17 2025','N/A','Mar 17 2025',300,'30.00','Flat &#8369;0.10 for consecutive years')+
+    _divCard('SMPH','SM Prime Holdings, Inc.',true,'&#8369;0.48','2.47%','Annual','May 12 2026','May 28 2025','Apr 14 2026',20,'9.60','Consistent 25-yr payer; yield near 10-yr high')+
+    '<div style="font-size:.68rem;color:#4a6080;margin-top:10px;padding:10px;background:#0d1b2a;border-radius:6px;">⚠️ Data via AI web search. Verify with PSE or your broker before making decisions.</div>';
+
+},300);
+</script>
 </body>
 </html>

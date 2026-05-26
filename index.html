@@ -5,7 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Investment Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <style>
+/* ── LOGIN OVERLAY ── */
+#loginOverlay{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:linear-gradient(135deg,#0a0e1a,#0d1b2a,#1a2a4a);
+  z-index:99999;display:flex;align-items:center;justify-content:center;
+}
+#loginBox{
+  background:#0d1b2a;border:1px solid #1e3a5f;border-radius:16px;
+  padding:40px 36px;width:90%;max-width:420px;text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.7);
+}
+#loginBox .login-logo{font-size:2.5rem;margin-bottom:8px;}
+#loginBox .login-title{font-size:1.3rem;font-weight:700;color:#fff;margin-bottom:4px;}
+#loginBox .login-sub{font-size:.78rem;color:#7fa8c9;margin-bottom:28px;line-height:1.5;}
+#loginBox .login-btn{
+  width:100%;padding:14px;background:linear-gradient(135deg,#0d47a1,#1565c0);
+  color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;
+  cursor:pointer;margin-bottom:12px;transition:opacity .2s;
+}
+#loginBox .login-btn:hover{opacity:.85;}
+#loginBox .login-note{font-size:.68rem;color:#4a6080;margin-top:16px;line-height:1.6;}
+#loginLoading{display:none;font-size:.78rem;color:#4fc3f7;margin-top:12px;}
+</style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#0a0e1a;color:#e0e6f0;font-family:'Segoe UI',sans-serif;min-height:100vh;}
 .header{background:linear-gradient(135deg,#0d1b2a,#1a2a4a);padding:14px 16px;border-bottom:1px solid #1e3a5f;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
@@ -174,6 +198,21 @@ tr:hover td{background:#0d1b2a;}
 </style>
 </head>
 <body>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay">
+  <div id="loginBox">
+    <div class="login-logo">📊</div>
+    <div class="login-title">Investment Dashboard</div>
+    <div class="login-sub">PSE Stocks · Crypto · Mutual Funds<br>Sign in to access your portfolio</div>
+    <button class="login-btn" onclick="doLogin()">🔐 Sign In with Email</button>
+    <div id="loginLoading">⏳ Checking your session...</div>
+    <div class="login-note">Access restricted to authorized users only.<br>Contact the administrator to request access.</div>
+  </div>
+</div>
+
+<!-- MAIN DASHBOARD (hidden until authenticated) -->
+<div id="mainApp" style="display:none;">
 <div class="header">
   <div>
     <div style="font-size:1.1rem;color:#4fc3f7;letter-spacing:1px;font-weight:700;">💼 INVESTMENT DASHBOARD</div>
@@ -1457,5 +1496,75 @@ setTimeout(function(){renderEditLists();},200);
 setTimeout(function(){restoreAllData();},300);
 setTimeout(function(){applyFallback();},600);
 </script>
+</div><!-- end mainApp -->
+
+<script>
+// ── NETLIFY IDENTITY AUTH ─────────────────────────
+var netlifyIdentity=window.netlifyIdentity;
+
+function doLogin(){
+  netlifyIdentity.open('login');
+}
+
+function showDashboard(){
+  document.getElementById('loginOverlay').style.display='none';
+  document.getElementById('mainApp').style.display='block';
+}
+
+function showLogin(){
+  document.getElementById('loginOverlay').style.display='flex';
+  document.getElementById('mainApp').style.display='none';
+}
+
+function addLogoutBtn(user){
+  // Add user info + logout to snap bar
+  var snapBar=document.querySelector('.snap-bar>div:last-child');
+  if(snapBar&&!document.getElementById('logoutBtn')){
+    var userBtn=document.createElement('button');
+    userBtn.id='logoutBtn';
+    userBtn.style.cssText='background:#1e3a5f;color:#b0c4d8;border:1px solid #2a4a6f;padding:5px 12px;border-radius:6px;font-size:.72rem;cursor:pointer;';
+    userBtn.innerHTML='👤 '+user.email+' &nbsp;|&nbsp; Sign Out';
+    userBtn.onclick=function(){
+      if(confirm('Sign out of Investment Dashboard?')){
+        netlifyIdentity.logout();
+      }
+    };
+    snapBar.appendChild(userBtn);
+  }
+}
+
+// Check if already logged in on page load
+document.getElementById('loginLoading').style.display='block';
+document.querySelector('.login-btn').style.display='none';
+
+netlifyIdentity.on('init',function(user){
+  if(user){
+    showDashboard();
+    addLogoutBtn(user);
+  } else {
+    document.getElementById('loginLoading').style.display='none';
+    document.querySelector('.login-btn').style.display='block';
+  }
+});
+
+netlifyIdentity.on('login',function(user){
+  netlifyIdentity.close();
+  showDashboard();
+  addLogoutBtn(user);
+});
+
+netlifyIdentity.on('logout',function(){
+  showLogin();
+  var btn=document.getElementById('logoutBtn');
+  if(btn)btn.remove();
+});
+
+netlifyIdentity.on('error',function(err){
+  console.error('Identity error:',err);
+  document.getElementById('loginLoading').style.display='none';
+  document.querySelector('.login-btn').style.display='block';
+});
+</script>
+
 </body>
 </html>

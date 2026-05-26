@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Investment Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://identity.netlify.com/v1/netlify-identity-widget.js" defer></script>
+
 <style>
 /* ── LOGIN OVERLAY ── */
 #loginOverlay{
@@ -20,15 +20,21 @@
 }
 #loginBox .login-logo{font-size:2.5rem;margin-bottom:8px;}
 #loginBox .login-title{font-size:1.3rem;font-weight:700;color:#fff;margin-bottom:4px;}
-#loginBox .login-sub{font-size:.78rem;color:#7fa8c9;margin-bottom:28px;line-height:1.5;}
+#loginBox .login-sub{font-size:.78rem;color:#7fa8c9;margin-bottom:24px;line-height:1.5;}
+.login-field{margin-bottom:14px;text-align:left;}
+.login-field label{display:block;font-size:.65rem;color:#7fa8c9;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.login-field input{width:100%;background:#0a1628;border:1px solid #1e3a5f;color:#e0e0e0;padding:10px 12px;border-radius:8px;font-size:.88rem;box-sizing:border-box;}
+.login-field input:focus{outline:none;border-color:#4fc3f7;}
 #loginBox .login-btn{
-  width:100%;padding:14px;background:linear-gradient(135deg,#0d47a1,#1565c0);
-  color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;
-  cursor:pointer;margin-bottom:12px;transition:opacity .2s;
+  width:100%;padding:12px;background:linear-gradient(135deg,#0d47a1,#1565c0);
+  color:#fff;border:none;border-radius:10px;font-size:.92rem;font-weight:700;
+  cursor:pointer;margin-top:4px;
 }
 #loginBox .login-btn:hover{opacity:.85;}
-#loginBox .login-note{font-size:.68rem;color:#4a6080;margin-top:16px;line-height:1.6;}
-#loginLoading{display:none;font-size:.78rem;color:#4fc3f7;margin-top:12px;}
+#loginBox .login-btn:disabled{opacity:.5;cursor:not-allowed;}
+#loginError{color:#ef5350;font-size:.75rem;margin-top:10px;display:none;}
+#loginLoading{display:none;font-size:.78rem;color:#4fc3f7;margin-top:10px;}
+#loginBox .login-note{font-size:.66rem;color:#4a6080;margin-top:16px;line-height:1.6;}
 </style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#0a0e1a;color:#e0e6f0;font-family:'Segoe UI',sans-serif;min-height:100vh;}
@@ -205,8 +211,17 @@ tr:hover td{background:#0d1b2a;}
     <div class="login-logo">📊</div>
     <div class="login-title">Investment Dashboard</div>
     <div class="login-sub">PSE Stocks · Crypto · Mutual Funds<br>Sign in to access your portfolio</div>
-    <button class="login-btn" onclick="doLogin()">🔐 Sign In with Email</button>
-    <div id="loginLoading">⏳ Checking your session...</div>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">🔐 Sign In</button>
+    <div id="loginError"></div>
+    <div id="loginLoading">⏳ Signing in...</div>
     <div class="login-note">Access restricted to authorized users only.<br>Contact the administrator to request access.</div>
   </div>
 </div>
@@ -1499,108 +1514,82 @@ setTimeout(function(){applyFallback();},600);
 </div><!-- end mainApp -->
 
 <script>
-// ── NETLIFY IDENTITY AUTH ─────────────────────────
-function doLogin(){
-  if(window.netlifyIdentity&&typeof window.netlifyIdentity.open==='function'){
-    window.netlifyIdentity.open('login');
-  } else {
-    alert('Identity service not loaded. Please refresh and try again.');
-  }
-}
+// ── AUTH — Direct Netlify Identity API ───────────
+var IDENTITY_URL='https://effervescent-cupcake-042384.netlify.app/.netlify/identity';
+var AUTH_TOKEN_KEY='pse_dash_auth_token';
+var AUTH_USER_KEY='pse_dash_auth_user';
 
 function showDashboard(){
   document.getElementById('loginOverlay').style.display='none';
   document.getElementById('mainApp').style.display='block';
 }
-
 function showLogin(){
   document.getElementById('loginOverlay').style.display='flex';
   document.getElementById('mainApp').style.display='none';
 }
+function showLoginError(msg){
+  var el=document.getElementById('loginError');
+  el.textContent=msg;el.style.display='block';
+  document.getElementById('loginLoading').style.display='none';
+  document.getElementById('loginBtn').disabled=false;
+}
 
-function addLogoutBtn(user){
+async function doLogin(){
+  var email=document.getElementById('loginEmail').value.trim();
+  var password=document.getElementById('loginPassword').value;
+  if(!email||!password){showLoginError('Please enter your email and password.');return;}
+  document.getElementById('loginBtn').disabled=true;
+  document.getElementById('loginError').style.display='none';
+  document.getElementById('loginLoading').style.display='block';
+  try{
+    var res=await fetch(IDENTITY_URL+'/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:'grant_type=password&username='+encodeURIComponent(email)+'&password='+encodeURIComponent(password)
+    });
+    var data=await res.json();
+    if(!res.ok||data.error){
+      showLoginError(data.error_description||data.msg||'Invalid email or password.');
+      return;
+    }
+    localStorage.setItem(AUTH_TOKEN_KEY,data.access_token);
+    localStorage.setItem(AUTH_USER_KEY,JSON.stringify({email:email,token:data.access_token}));
+    showDashboard();
+    addLogoutBtn(email);
+  }catch(e){
+    showLoginError('Network error. Please try again.');
+  }
+}
+
+function addLogoutBtn(email){
   var snapBar=document.querySelector('.snap-bar>div:last-child');
   if(snapBar&&!document.getElementById('logoutBtn')){
-    var userBtn=document.createElement('button');
-    userBtn.id='logoutBtn';
-    userBtn.style.cssText='background:#1e3a5f;color:#b0c4d8;border:1px solid #2a4a6f;padding:5px 12px;border-radius:6px;font-size:.72rem;cursor:pointer;';
-    userBtn.innerHTML='👤 '+user.email+' &nbsp;|&nbsp; Sign Out';
-    userBtn.onclick=function(){
-      if(confirm('Sign out of Investment Dashboard?')){
-        window.netlifyIdentity.logout();
+    var btn=document.createElement('button');
+    btn.id='logoutBtn';
+    btn.style.cssText='background:#1e3a5f;color:#b0c4d8;border:1px solid #2a4a6f;padding:5px 12px;border-radius:6px;font-size:.72rem;cursor:pointer;';
+    btn.innerHTML='👤 '+email+' &nbsp;|&nbsp; Sign Out';
+    btn.onclick=function(){
+      if(confirm('Sign out?')){
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        localStorage.removeItem(AUTH_USER_KEY);
+        showLogin();btn.remove();
       }
     };
-    snapBar.appendChild(userBtn);
+    snapBar.appendChild(btn);
   }
 }
 
-// Wait for widget script to fully load
-function initIdentity(){
-  var ni=window.netlifyIdentity;
-  if(!ni||typeof ni.on!=='function'){
-    console.warn('Netlify Identity not available — skipping auth');
-    showDashboard();
-    return;
+// Check existing session on load
+(function(){
+  var saved=localStorage.getItem(AUTH_USER_KEY);
+  if(saved){
+    try{
+      var user=JSON.parse(saved);
+      if(user&&user.token){showDashboard();addLogoutBtn(user.email);return;}
+    }catch(e){}
   }
-
-  // Show loading, hide button while checking session
-  document.getElementById('loginLoading').style.display='block';
-  document.querySelector('.login-btn').style.display='none';
-
-  // Handle invite/recovery tokens in URL
-  if(window.location.hash&&(
-    window.location.hash.includes('invite_token')||
-    window.location.hash.includes('recovery_token')||
-    window.location.hash.includes('confirmation_token')
-  )){
-    setTimeout(function(){ni.open();},300);
-  }
-
-  ni.on('init',function(user){
-    if(user){
-      showDashboard();
-      addLogoutBtn(user);
-    } else {
-      document.getElementById('loginLoading').style.display='none';
-      document.querySelector('.login-btn').style.display='block';
-    }
-  });
-
-  ni.on('login',function(user){
-    ni.close();
-    showDashboard();
-    addLogoutBtn(user);
-  });
-
-  ni.on('logout',function(){
-    showLogin();
-    var btn=document.getElementById('logoutBtn');
-    if(btn)btn.remove();
-  });
-
-  ni.on('error',function(err){
-    console.error('Identity error:',err);
-    document.getElementById('loginLoading').style.display='none';
-    document.querySelector('.login-btn').style.display='block';
-  });
-}
-
-// Retry until netlifyIdentity is available (CDN may load slowly)
-var identityRetries=0;
-function waitForIdentity(){
-  if(window.netlifyIdentity&&typeof window.netlifyIdentity.on==='function'){
-    initIdentity();
-  } else if(identityRetries<20){
-    identityRetries++;
-    setTimeout(waitForIdentity,250);
-  } else {
-    console.warn('Netlify Identity failed to load after 5s — skipping auth');
-    showDashboard();
-  }
-}
-window.addEventListener('load',function(){
-  setTimeout(waitForIdentity,100);
-});
+  showLogin();
+})();
 </script>
 
 </body>

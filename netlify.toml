@@ -2,8 +2,11 @@
   publish = "."
   functions = "api"
 
+[functions]
+  node_bundler = "esbuild"
+
 [[headers]]
-  for = "/api/*"
+  for = "/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Headers = "Content-Type, x-user-api-key"

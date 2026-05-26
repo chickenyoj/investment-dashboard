@@ -760,11 +760,10 @@ async function callAI(prompt,useSearch){
   var body={model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]};
   if(useSearch) body.tools=[{type:'web_search_20250305',name:'web_search'}];
 
-  // Use local proxy when hosted (Netlify), fall back to direct call on localhost
   var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';
   var endpoint=isLocal
     ? 'https://api.anthropic.com/v1/messages'
-    : '/api/claude';
+    : '/.netlify/functions/claude';
 
   var headers={'Content-Type':'application/json'};
   if(isLocal){
@@ -775,8 +774,35 @@ async function callAI(prompt,useSearch){
     headers['x-user-api-key']=apiKey;
   }
 
-  var res=await fetch(endpoint,{method:'POST',headers:headers,body:JSON.stringify(body)});
-  var d=await res.json();
+  var res;
+  try{
+    res=await fetch(endpoint,{method:'POST',headers:headers,body:JSON.stringify(body)});
+  } catch(fetchErr){
+    throw new Error('Network error — could not reach '+endpoint+': '+fetchErr.message);
+  }
+
+  // Read raw text first so we can diagnose empty or non-JSON responses
+  var rawText;
+  try{
+    rawText=await res.text();
+  } catch(textErr){
+    throw new Error('Could not read response body: '+textErr.message);
+  }
+
+  console.log('API response status:',res.status);
+  console.log('API response body:',rawText.substring(0,300));
+
+  if(!rawText||rawText.trim()===''){
+    throw new Error('Empty response from '+endpoint+' (status '+res.status+'). Check Netlify function logs.');
+  }
+
+  var d;
+  try{
+    d=JSON.parse(rawText);
+  } catch(parseErr){
+    throw new Error('Non-JSON response (status '+res.status+'): '+rawText.substring(0,200));
+  }
+
   if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
   return d.content.map(function(i){return i.type==='text'?i.text:'';}).filter(Boolean).join('\n');
 }

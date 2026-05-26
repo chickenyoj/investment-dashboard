@@ -1561,6 +1561,47 @@ async function doLogin(){
   }
 }
 
+async function doSetPassword(){
+  var password=document.getElementById('newPassword').value;
+  var confirm=document.getElementById('confirmPassword').value;
+  if(!password||password.length<8){showLoginError('Password must be at least 8 characters.');return;}
+  if(password!==confirm){showLoginError('Passwords do not match.');return;}
+  document.getElementById('loginBtn').disabled=true;
+  document.getElementById('loginError').style.display='none';
+  document.getElementById('loginLoading').style.display='block';
+  try{
+    var token=window._recoveryToken||window._inviteToken;
+    var res=await fetch(IDENTITY_URL+'/user',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({password:password})
+    });
+    var data=await res.json();
+    if(!res.ok){showLoginError(data.msg||'Failed to set password. Please try again.');return;}
+    // Auto login after setting password
+    localStorage.setItem(AUTH_TOKEN_KEY,token);
+    localStorage.setItem(AUTH_USER_KEY,JSON.stringify({email:data.email,token:token}));
+    showDashboard();
+    addLogoutBtn(data.email);
+    // Clean URL hash
+    history.replaceState(null,'','/');
+  }catch(e){
+    showLoginError('Network error. Please try again.');
+  }
+}
+
+function showSetPasswordForm(type){
+  var box=document.getElementById('loginBox');
+  box.innerHTML='<div class="login-logo">🔑</div>'+
+    '<div class="login-title">'+(type==='invite'?'Set Your Password':'Reset Password')+'</div>'+
+    '<div class="login-sub">Choose a password for your Investment Dashboard account.</div>'+
+    '<div class="login-field"><label>New Password</label><input type="password" id="newPassword" placeholder="Min. 8 characters"></div>'+
+    '<div class="login-field"><label>Confirm Password</label><input type="password" id="confirmPassword" placeholder="Repeat password" onkeydown="if(event.key===\'Enter\')doSetPassword()"></div>'+
+    '<button class="login-btn" id="loginBtn" onclick="doSetPassword()">✅ Set Password & Sign In</button>'+
+    '<div id="loginError" style="color:#ef5350;font-size:.75rem;margin-top:10px;display:none;"></div>'+
+    '<div id="loginLoading" style="display:none;font-size:.78rem;color:#4fc3f7;margin-top:10px;">⏳ Setting password...</div>';
+}
+
 function addLogoutBtn(email){
   var snapBar=document.querySelector('.snap-bar>div:last-child');
   if(snapBar&&!document.getElementById('logoutBtn')){
@@ -1579,8 +1620,26 @@ function addLogoutBtn(email){
   }
 }
 
-// Check existing session on load
+// Parse URL hash tokens
 (function(){
+  var hash=window.location.hash;
+  var recoveryMatch=hash.match(/recovery_token=([^&]+)/);
+  var inviteMatch=hash.match(/invite_token=([^&]+)/);
+
+  if(recoveryMatch){
+    window._recoveryToken=recoveryMatch[1];
+    showLogin();
+    showSetPasswordForm('recovery');
+    return;
+  }
+  if(inviteMatch){
+    window._inviteToken=inviteMatch[1];
+    showLogin();
+    showSetPasswordForm('invite');
+    return;
+  }
+
+  // Check existing session
   var saved=localStorage.getItem(AUTH_USER_KEY);
   if(saved){
     try{

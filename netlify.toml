@@ -1,0 +1,10 @@
+[build]
+  publish = "."
+  functions = "api"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Headers = "Content-Type, x-user-api-key"
+    Access-Control-Allow-Methods = "POST, OPTIONS"

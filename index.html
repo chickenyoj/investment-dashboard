@@ -757,7 +757,7 @@ async function callAI(prompt,useSearch){
     openApiSettings();
     throw new Error('No API key set. Please enter your Anthropic API key.');
   }
-  var body={model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]};
+  var body={model:'claude-sonnet-4-5',max_tokens:1200,messages:[{role:'user',content:prompt}]};
   if(useSearch) body.tools=[{type:'web_search_20250305',name:'web_search'}];
 
   var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';

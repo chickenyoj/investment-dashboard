@@ -759,16 +759,23 @@ async function callAI(prompt,useSearch){
   }
   var body={model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]};
   if(useSearch) body.tools=[{type:'web_search_20250305',name:'web_search'}];
-  var res=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':apiKey,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-allow-browser':'true'
-    },
-    body:JSON.stringify(body)
-  });
+
+  // Use local proxy when hosted (Netlify), fall back to direct call on localhost
+  var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';
+  var endpoint=isLocal
+    ? 'https://api.anthropic.com/v1/messages'
+    : '/api/claude';
+
+  var headers={'Content-Type':'application/json'};
+  if(isLocal){
+    headers['x-api-key']=apiKey;
+    headers['anthropic-version']='2023-06-01';
+    headers['anthropic-dangerous-allow-browser']='true';
+  } else {
+    headers['x-user-api-key']=apiKey;
+  }
+
+  var res=await fetch(endpoint,{method:'POST',headers:headers,body:JSON.stringify(body)});
   var d=await res.json();
   if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
   return d.content.map(function(i){return i.type==='text'?i.text:'';}).filter(Boolean).join('\n');
